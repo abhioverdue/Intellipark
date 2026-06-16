@@ -1,0 +1,18 @@
+{
+  "forecast_horizon_hours": 1,
+
+  "train_fraction": 0.8,
+
+  "model": "xgboost",
+
+  "targets": [
+    "violation_count",
+    "avg_impact_score"
+  ],
+
+  "grid_features": {
+    "use_lag_1": true,
+    "use_lag_24": true,
+    "use_rolling_24": true
+  }
+}

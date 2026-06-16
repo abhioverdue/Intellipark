@@ -1,5 +1,7 @@
 from pathlib import Path
 import json
+from pathlib import Path
+import json
 import logging
 
 import numpy as np
@@ -108,6 +110,28 @@ def normalize_vehicle_type(series: pd.Series) -> pd.Series:
     )
 
     return clean.map(mapping).fillna("OTHER")
+
+
+def parse_violation_list(series: pd.Series) -> pd.Series:
+    """violation_type arrives as a stringified JSON list, e.g.
+    '["WRONG PARKING","PARKING NEAR ROAD CROSSING"]'. Parse it into
+    an actual Python list per row so downstream code never has to
+    regex/guess at the raw string.
+    """
+
+    def _parse(value):
+        if pd.isna(value):
+            return []
+        try:
+            parsed = json.loads(value)
+            if isinstance(parsed, list):
+                return [str(v).strip().upper() for v in parsed if v]
+            return [str(parsed).strip().upper()]
+        except (json.JSONDecodeError, TypeError):
+            # Fallback: not valid JSON, treat as a single raw label
+            return [str(value).strip().upper()]
+
+    return series.apply(_parse)
 
 
 def assign_vehicle_size(series: pd.Series) -> pd.Series:
@@ -221,6 +245,20 @@ def main():
         df["vehicle_type_final"]
     )
 
+    if "violation_type" in df.columns:
+        df["violation_list"] = parse_violation_list(
+            df["violation_type"]
+        )
+
+        df["violation_count"] = (
+            df["violation_list"].str.len().astype("int8")
+        )
+
+        df["primary_violation"] = (
+            df["violation_list"]
+            .apply(lambda lst: lst[0] if lst else "UNKNOWN")
+        )
+
     df["vehicle_size_class"] = assign_vehicle_size(
         df["vehicle_category"]
     )
@@ -232,6 +270,7 @@ def main():
         "police_station",
         "junction_name",
         "grid_cell_id",
+        "primary_violation",
     ]
 
     for col in category_cols:
@@ -250,6 +289,13 @@ def main():
         ),
         "unique_grids": int(
             df["grid_cell_id"].nunique()
+        ),
+        "unknown_primary_violation_pct": round(
+            float((df["primary_violation"] == "UNKNOWN").mean() * 100),
+            2,
+        ),
+        "unique_primary_violations": int(
+            df["primary_violation"].nunique()
         ),
     }
 

@@ -61,6 +61,9 @@ def min_max_scale(series: pd.Series) -> pd.Series:
 
 def normalize_violation(series: pd.Series) -> pd.Series:
 
+    if pd.api.types.is_categorical_dtype(series.dtype):
+        series = series.astype(object)
+
     return (
         series.fillna("DEFAULT")
         .astype(str)
@@ -118,6 +121,7 @@ def main():
     violation_col = None
 
     candidate_columns = [
+        "primary_violation",
         "violation_type",
         "violation",
         "offence_type",
