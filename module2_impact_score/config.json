@@ -1,0 +1,26 @@
+{
+  "weights": {
+    "junction_flag": 0.10,
+    "violation_severity": 0.20,
+    "vehicle_size": 0.15,
+    "peak_hour": 0.15,
+    "hotspot_density": 0.25,
+    "repeat_flag": 0.15
+  },
+
+  "vehicle_size_scores": {
+    "SMALL": 1,
+    "MEDIUM": 2,
+    "LARGE": 3,
+    "XLARGE": 4
+  },
+
+  "violation_severity_scores": {
+    "DOUBLE_PARKING": 5,
+    "OBSTRUCTING_TRAFFIC": 5,
+    "NO_PARKING_ZONE": 4,
+    "FOOTPATH_PARKING": 3,
+    "WRONG_SIDE_PARKING": 3,
+    "DEFAULT": 2
+  }
+}

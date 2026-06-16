@@ -6,9 +6,9 @@ import numpy as np
 import pandas as pd
 
 
-# ==========================================================
+
 # CONFIG
-# ==========================================================
+
 
 ROOT = Path(__file__).resolve().parents[1]
 
@@ -31,9 +31,9 @@ REQUIRED_COLUMNS = [
 ]
 
 
-# ==========================================================
+
 # LOGGING
-# ==========================================================
+
 
 logging.basicConfig(
     level=logging.INFO,
@@ -43,9 +43,8 @@ logging.basicConfig(
 logger = logging.getLogger(__name__)
 
 
-# ==========================================================
 # HELPERS
-# ==========================================================
+
 
 def parse_datetime(series: pd.Series) -> pd.Series:
     dt = pd.to_datetime(
@@ -127,9 +126,9 @@ def assign_vehicle_size(series: pd.Series) -> pd.Series:
     return series.map(mapping).fillna("MEDIUM")
 
 
-# ==========================================================
+
 # MAIN
-# ==========================================================
+
 
 def main():
 
