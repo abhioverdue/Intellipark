@@ -104,7 +104,7 @@
   function wireDashboardLinks() {
     // The React dashboard's dev server (vite). Change this if you run
     // `npm run dev` on a different port, or to your deployed dashboard URL.
-    const DASHBOARD_URL = 'http://localhost:5173';
+    const DASHBOARD_URL = 'https://intellipark-beta.vercel.app/';
 
     const links = [
       document.getElementById('dashboard-cta-link'),
