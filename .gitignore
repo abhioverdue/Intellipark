@@ -45,3 +45,11 @@ __pycache__/
 
 # OS
 .DS_Store
+.venv/data/raw/data.csv
+data/raw/
+**/output/
+*.parquet
+*.joblib
+*.pkl
+*.log
+.venv/
