@@ -1,0 +1,14 @@
+{
+  "weights": {
+    "edi": 0.70,
+    "critical_ratio": 0.20,
+    "repeat_offender_ratio": 0.10
+  },
+
+  "zone_quantiles": {
+    "red": 0.90,
+    "yellow": 0.70
+  },
+
+  "violations_per_unit": 8
+}

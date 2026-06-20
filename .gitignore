@@ -1,0 +1,42 @@
+# Raw data — don't commit the competition dataset
+data/raw/*.csv
+
+# Pipeline outputs — regenerate locally with `python run_pipeline.py`.
+module1_pipeline/output/*
+!module1_pipeline/output/deploy_lookups.json
+!module1_pipeline/output/.gitkeep
+
+module2_impact_score/output/*
+!module2_impact_score/output/breakdown_shapes.json
+!module2_impact_score/output/.gitkeep
+
+module3_repeat_offender/output/*
+!module3_repeat_offender/output/vehicle_risk.parquet
+!module3_repeat_offender/output/.gitkeep
+
+module4_hotspot_forecast/output/*
+!module4_hotspot_forecast/output/feature_importance.csv
+!module4_hotspot_forecast/output/.gitkeep
+
+module5_edi/output/*
+!module5_edi/output/edi_scores_with_flow.parquet
+!module5_edi/output/future_priority_with_flow.parquet
+!module5_edi/output/.gitkeep
+
+# module6_optimizer/output/*.json (allocations) are already small —
+# not ignored, commit them along with module6_optimizer/config.json.
+
+# Frontend
+node_modules/
+dist/
+.env
+!.env.example
+
+# Python
+__pycache__/
+*.pyc
+
+# OS
+.DS_Store
+
+!.venv/

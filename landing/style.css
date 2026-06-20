@@ -1,0 +1,529 @@
+/* =========================================================
+   IntelliPark landing page
+   Design tokens — kept identical to the Streamlit dashboard's
+   theme.py so both surfaces read as one product.
+   ========================================================= */
+
+:root {
+  --base: #0A0E0F;
+  --surface: #141A1C;
+  --surface-2: #1C2528;
+  --hairline: #2A3438;
+  --text: #E8E4DC;
+  --text-dim: #8A938F;
+  --red: #FF4D2E;
+  --yellow: #F5C518;
+  --green: #39B88A;
+
+  --mono: 'IBM Plex Mono', monospace;
+  --sans: 'IBM Plex Sans', sans-serif;
+}
+
+* { box-sizing: border-box; }
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  margin: 0;
+  background: var(--base);
+  color: var(--text);
+  font-family: var(--sans);
+  line-height: 1.55;
+  overflow-x: hidden;
+}
+
+a { color: inherit; text-decoration: none; }
+
+h1, h2, h3 {
+  font-family: var(--mono);
+  font-weight: 600;
+  letter-spacing: -0.01em;
+  margin: 0;
+}
+
+p { margin: 0; }
+
+/* =========================================================
+   Background canvas — dithered radar wash, fixed behind all content
+   ========================================================= */
+
+#radar-canvas {
+  position: fixed;
+  inset: 0;
+  width: 100%;
+  height: 100%;
+  z-index: 0;
+  display: block;
+}
+
+.scanline-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 1;
+  pointer-events: none;
+  background: repeating-linear-gradient(
+    180deg,
+    rgba(0,0,0,0) 0px,
+    rgba(0,0,0,0) 2px,
+    rgba(255,255,255,0.012) 3px,
+    rgba(0,0,0,0) 4px
+  );
+  mix-blend-mode: overlay;
+}
+
+main, header, footer {
+  position: relative;
+  z-index: 2;
+}
+
+/* =========================================================
+   Top bar
+   ========================================================= */
+
+.topbar {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 22px 5vw;
+}
+
+.topbar-mark {
+  font-family: var(--mono);
+  font-weight: 700;
+  font-size: 0.95rem;
+  letter-spacing: 0.06em;
+}
+
+.topbar-nav {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.05em;
+  color: var(--text-dim);
+}
+
+.status-dot {
+  width: 6px;
+  height: 6px;
+  border-radius: 50%;
+  background: var(--green);
+  box-shadow: 0 0 6px var(--green);
+  animation: pulse-dot 2.4s ease-in-out infinite;
+}
+
+@keyframes pulse-dot {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.35; }
+}
+
+/* =========================================================
+   Hero
+   ========================================================= */
+
+.hero {
+  min-height: 88vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  padding: 0 5vw;
+  position: relative;
+}
+
+.hero-content {
+  max-width: 720px;
+}
+
+.hero-eyebrow {
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  letter-spacing: 0.08em;
+  color: var(--text-dim);
+  margin-bottom: 22px;
+}
+
+.hero-title {
+  font-size: clamp(2.4rem, 5.4vw, 4.4rem);
+  line-height: 1.08;
+  margin-bottom: 28px;
+}
+
+.accent-red { color: var(--red); }
+.accent-yellow { color: var(--yellow); }
+
+.hero-sub {
+  font-size: 1.05rem;
+  color: var(--text-dim);
+  max-width: 520px;
+  margin-bottom: 36px;
+}
+
+.hero-actions {
+  display: flex;
+  gap: 14px;
+  flex-wrap: wrap;
+}
+
+.hero-resolve-label {
+  position: absolute;
+  bottom: 36px;
+  right: 5vw;
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.1em;
+  color: var(--text-dim);
+  opacity: 0.7;
+}
+
+/* =========================================================
+   Buttons
+   ========================================================= */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  font-family: var(--mono);
+  font-size: 0.85rem;
+  font-weight: 600;
+  letter-spacing: 0.02em;
+  padding: 13px 26px;
+  border-radius: 6px;
+  border: 1px solid transparent;
+  transition: transform 0.15s ease, background 0.15s ease, border-color 0.15s ease;
+}
+
+.btn:hover { transform: translateY(-1px); }
+
+.btn-primary {
+  background: var(--yellow);
+  color: var(--base);
+}
+
+.btn-primary:hover { background: #ffd23f; }
+
+.btn-ghost {
+  border-color: var(--hairline);
+  color: var(--text);
+  background: rgba(255,255,255,0.02);
+}
+
+.btn-ghost:hover { border-color: var(--text-dim); }
+
+.btn-large {
+  padding: 16px 34px;
+  font-size: 0.92rem;
+}
+
+/* =========================================================
+   Stats
+   ========================================================= */
+
+.stats {
+  padding: 70px 5vw 50px;
+}
+
+.stats-grid {
+  display: grid;
+  grid-template-columns: repeat(4, 1fr);
+  gap: 16px;
+}
+
+.stat-card {
+  background: var(--surface);
+  border: 1px solid var(--hairline);
+  border-radius: 8px;
+  padding: 26px 22px;
+}
+
+.stat-value {
+  font-family: var(--mono);
+  font-size: 2.4rem;
+  font-weight: 700;
+  color: var(--text);
+  font-variant-numeric: tabular-nums;
+  margin-bottom: 10px;
+}
+
+.stat-label {
+  font-size: 0.86rem;
+  color: var(--text-dim);
+}
+
+.stat-note {
+  font-family: var(--mono);
+  font-size: 0.72rem;
+  letter-spacing: 0.02em;
+  opacity: 0.7;
+}
+
+.stats-source {
+  margin-top: 18px;
+  font-family: var(--mono);
+  font-size: 0.74rem;
+  color: var(--text-dim);
+  letter-spacing: 0.01em;
+}
+
+/* =========================================================
+   Section headers (shared)
+   ========================================================= */
+
+.section-head {
+  max-width: 640px;
+  margin-bottom: 44px;
+}
+
+.section-eyebrow {
+  font-family: var(--mono);
+  font-size: 0.74rem;
+  letter-spacing: 0.08em;
+  color: var(--yellow);
+  margin-bottom: 14px;
+}
+
+.section-head h2 {
+  font-size: clamp(1.6rem, 3vw, 2.2rem);
+  margin-bottom: 14px;
+}
+
+.section-sub {
+  color: var(--text-dim);
+  font-size: 0.98rem;
+}
+
+/* =========================================================
+   How it works — pipeline track
+   ========================================================= */
+
+.how-it-works {
+  padding: 90px 5vw;
+}
+
+.pipeline-track {
+  display: grid;
+  grid-template-columns: repeat(5, 1fr);
+  gap: 14px;
+}
+
+.pipeline-step {
+  background: var(--surface);
+  border: 1px solid var(--hairline);
+  border-radius: 8px;
+  padding: 22px 18px;
+  position: relative;
+}
+
+.pipeline-step::after {
+  content: '';
+  position: absolute;
+  top: 50%;
+  right: -14px;
+  width: 12px;
+  height: 1px;
+  background: var(--hairline);
+  display: none;
+}
+
+@media (min-width: 1000px) {
+  .pipeline-step::after { display: block; }
+  .pipeline-step:last-child::after { display: none; }
+}
+
+.pipeline-tag {
+  display: inline-block;
+  font-family: var(--mono);
+  font-size: 0.68rem;
+  letter-spacing: 0.04em;
+  color: var(--base);
+  background: var(--green);
+  padding: 3px 8px;
+  border-radius: 3px;
+  margin-bottom: 14px;
+}
+
+.pipeline-step h3 {
+  font-size: 0.98rem;
+  margin-bottom: 10px;
+}
+
+.pipeline-step p {
+  font-size: 0.84rem;
+  color: var(--text-dim);
+  line-height: 1.5;
+}
+
+/* =========================================================
+   Map preview
+   ========================================================= */
+
+.map-preview {
+  padding: 30px 5vw 90px;
+}
+
+.map-frame {
+  border: 1px solid var(--hairline);
+  border-radius: 10px;
+  overflow: hidden;
+  position: relative;
+  background: var(--surface);
+}
+
+.map-frame-inner {
+  height: 420px;
+  background:
+    radial-gradient(circle at 30% 40%, rgba(255,77,46,0.62), transparent 12%),
+    radial-gradient(circle at 65% 60%, rgba(245,197,24,0.50), transparent 14%),
+    radial-gradient(circle at 80% 25%, rgba(57,184,138,0.48), transparent 14%),
+    url('https://www.mapz.com/stadtplan/image/bangalore_multicolor@2x.png') center/cover;
+  position: relative;
+}
+
+.map-frame-inner::before {
+  content: '';
+  position: absolute;
+  inset: 0;
+  background-image:
+    linear-gradient(rgba(255,255,255,0.04) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(255,255,255,0.04) 1px, transparent 1px);
+  background-size: 36px 36px;
+}
+
+.map-legend {
+  display: flex;
+  gap: 22px;
+  padding: 14px 20px;
+  border-top: 1px solid var(--hairline);
+  font-family: var(--mono);
+  font-size: 0.76rem;
+  color: var(--text-dim);
+}
+
+.legend-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+}
+
+.legend-dot {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  display: inline-block;
+}
+
+.dot-green { background: var(--green); }
+.dot-yellow { background: var(--yellow); }
+.dot-red { background: var(--red); }
+
+/* =========================================================
+   Honesty section
+   ========================================================= */
+
+.honesty {
+  padding: 30px 5vw 90px;
+}
+
+.honesty-grid {
+  display: grid;
+  grid-template-columns: repeat(3, 1fr);
+  gap: 16px;
+}
+
+.honesty-card {
+  background: var(--surface);
+  border: 1px solid var(--hairline);
+  border-left: 3px solid var(--yellow);
+  border-radius: 8px;
+  padding: 22px 20px;
+}
+
+.honesty-tag {
+  font-family: var(--mono);
+  font-size: 0.7rem;
+  letter-spacing: 0.05em;
+  color: var(--yellow);
+  margin-bottom: 12px;
+}
+
+.honesty-card p {
+  font-size: 0.88rem;
+  color: var(--text-dim);
+  line-height: 1.55;
+}
+
+/* =========================================================
+   CTA
+   ========================================================= */
+
+.cta {
+  padding: 110px 5vw;
+  text-align: center;
+  border-top: 1px solid var(--hairline);
+}
+
+.cta h2 {
+  font-size: clamp(1.8rem, 4vw, 2.6rem);
+  margin-bottom: 18px;
+}
+
+.cta p {
+  color: var(--text-dim);
+  max-width: 480px;
+  margin: 0 auto 34px;
+}
+
+.cta-note {
+  margin-top: 18px;
+  font-size: 0.74rem;
+  font-family: var(--mono);
+  color: var(--text-dim);
+  opacity: 0.7;
+}
+
+/* =========================================================
+   Footer
+   ========================================================= */
+
+.footer {
+  display: flex;
+  justify-content: space-between;
+  padding: 28px 5vw 40px;
+  font-family: var(--mono);
+  font-size: 0.74rem;
+  letter-spacing: 0.04em;
+  color: var(--text-dim);
+  border-top: 1px solid var(--hairline);
+}
+
+.footer-dim { opacity: 0.6; }
+
+/* =========================================================
+   Reduced motion
+   ========================================================= */
+
+@media (prefers-reduced-motion: reduce) {
+  html { scroll-behavior: auto; }
+  .status-dot { animation: none; }
+  .btn { transition: none; }
+}
+
+/* =========================================================
+   Responsive
+   ========================================================= */
+
+@media (max-width: 980px) {
+  .stats-grid { grid-template-columns: repeat(2, 1fr); }
+  .pipeline-track { grid-template-columns: repeat(2, 1fr); }
+  .honesty-grid { grid-template-columns: 1fr; }
+}
+
+@media (max-width: 560px) {
+  .stats-grid { grid-template-columns: 1fr; }
+  .pipeline-track { grid-template-columns: 1fr; }
+  .hero { min-height: 76vh; }
+  .topbar { flex-direction: row; }
+}

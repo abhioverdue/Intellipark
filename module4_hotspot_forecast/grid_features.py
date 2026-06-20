@@ -1,4 +1,5 @@
 from pathlib import Path
+import json
 import logging
 
 import numpy as np
@@ -14,6 +15,12 @@ INPUT_PATH = (
     / "risk_tagged.parquet"
 )
 
+CONFIG_PATH = (
+    ROOT
+    / "module4_hotspot_forecast"
+    / "config.json"
+)
+
 OUTPUT_DIR = (
     ROOT
     / "module4_hotspot_forecast"
@@ -24,6 +31,24 @@ OUTPUT_PATH = (
     OUTPUT_DIR
     / "training_data.parquet"
 )
+
+# Fallback if config.json is missing entirely -- matches the lags/windows
+# this script has always computed, so a missing config doesn't change
+# behavior.
+DEFAULT_LAGS = [1, 3, 6, 24, 168]
+DEFAULT_ROLLING_WINDOWS = [6, 12, 24]
+
+
+def load_config() -> dict:
+    if not CONFIG_PATH.exists():
+        return {
+            "grid_features": {
+                "lags": DEFAULT_LAGS,
+                "rolling_windows": DEFAULT_ROLLING_WINDOWS,
+            }
+        }
+    with open(CONFIG_PATH) as f:
+        return json.load(f)
 
 
 logging.basicConfig(
@@ -37,22 +62,23 @@ logger = logging.getLogger(__name__)
 def add_lag_features(
     df: pd.DataFrame,
     group_col: str,
-    target_col: str
+    target_col: str,
+    lags: list[int],
+    rolling_windows: list[int],
 ) -> pd.DataFrame:
 
     grouped = df.groupby(
         group_col,
         observed=True
     )
-    # Add lag features: skip lag_2 (rarely helps) for selective signal
-    for lag in [1, 3, 6, 24, 168]:
+
+    for lag in lags:
         df[f"{target_col}_lag_{lag}"] = (
             grouped[target_col]
             .shift(lag)
         )
 
-    # Add rolling-window mean features (skip rolling_3 as too noisy)
-    for window in [6, 12, 24]:
+    for window in rolling_windows:
         df[f"{target_col}_rolling_{window}"] = (
             grouped[target_col]
             .transform(
@@ -118,6 +144,14 @@ def main():
         parents=True,
         exist_ok=True
     )
+
+    config = load_config()
+    gf_config = config.get("grid_features", {})
+    lags = gf_config.get("lags", DEFAULT_LAGS)
+    rolling_windows = gf_config.get("rolling_windows", DEFAULT_ROLLING_WINDOWS)
+
+    logger.info(f"Lag features: {lags}")
+    logger.info(f"Rolling-window features: {rolling_windows}")
 
     logger.info("Loading risk-tagged dataset")
 
@@ -278,13 +312,17 @@ def main():
     grid_df = add_lag_features(
         grid_df,
         "grid_cell_id",
-        "violation_count"
+        "violation_count",
+        lags,
+        rolling_windows,
     )
 
     grid_df = add_lag_features(
         grid_df,
         "grid_cell_id",
-        "avg_impact_score"
+        "avg_impact_score",
+        lags,
+        rolling_windows,
     )
 
     logger.info(

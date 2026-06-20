@@ -1,4 +1,5 @@
 from pathlib import Path
+import json
 import logging
 
 import joblib
@@ -20,6 +21,12 @@ INPUT_PATH = (
     / "module4_hotspot_forecast"
     / "output"
     / "training_data.parquet"
+)
+
+CONFIG_PATH = (
+    ROOT
+    / "module4_hotspot_forecast"
+    / "config.json"
 )
 
 OUTPUT_DIR = (
@@ -93,6 +100,47 @@ OPTIONAL_FEATURES = [
     "grid_mean_count",
     "grid_mean_impact",
 ]
+
+
+def load_config() -> dict:
+    if not CONFIG_PATH.exists():
+        return {"train_fraction": 0.8, "model": "xgboost",
+                "targets": ["violation_count", "avg_impact_score"]}
+    with open(CONFIG_PATH) as f:
+        return json.load(f)
+
+
+def validate_config(config: dict):
+    """This script hardcodes two specific XGBoost models (Poisson count
+    regressor + squared-error impact regressor) -- it can't actually
+    train an arbitrary model or target list without real code changes.
+    train_fraction is the one config value genuinely free to vary, so
+    that's the one read live below; model/targets are validated against
+    what the code can actually do, rather than silently ignored."""
+
+    model = config.get("model", "xgboost")
+    if model != "xgboost":
+        raise ValueError(
+            f"config.json specifies model='{model}', but train_model.py "
+            f"only implements XGBoost regressors. Update config.json to "
+            f"'xgboost', or extend build_count_model/build_impact_model "
+            f"to support other model types first."
+        )
+
+    targets = config.get("targets", [])
+    expected_targets = {"violation_count", "avg_impact_score"}
+    if set(targets) != expected_targets:
+        raise ValueError(
+            f"config.json targets={targets} but train_model.py only "
+            f"trains models for {sorted(expected_targets)}. Update "
+            f"config.json, or extend this script to handle other targets."
+        )
+
+    train_fraction = config.get("train_fraction", 0.8)
+    if not (0.0 < train_fraction < 1.0):
+        raise ValueError(
+            f"train_fraction must be between 0 and 1 (got {train_fraction})"
+        )
 
 
 def get_features(df: pd.DataFrame) -> list[str]:
@@ -209,6 +257,12 @@ def evaluate(
 
 def main():
 
+    config = load_config()
+    validate_config(config)
+
+    train_fraction = config.get("train_fraction", 0.8)
+    logger.info(f"Config validated. train_fraction={train_fraction}")
+
     logger.info("Loading training data")
 
     df = pd.read_parquet(INPUT_PATH)
@@ -233,7 +287,7 @@ def main():
 
     logger.info("Schema validation passed")
 
-    cutoff = df["date_hour"].quantile(0.80)
+    cutoff = df["date_hour"].quantile(train_fraction)
 
     train = df[
         df["date_hour"] < cutoff
@@ -361,6 +415,11 @@ def main():
             "forecast_priority"
         ]
     ].copy()
+
+    forecast_df["critical_ratio"] = df["critical_ratio"].values
+    forecast_df["repeat_offender_ratio"] = (
+        df["repeat_offender_ratio"].values
+    )
 
     forecast_df.to_parquet(
         FORECAST_PATH,

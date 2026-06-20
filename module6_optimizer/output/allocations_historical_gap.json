@@ -1,0 +1,366 @@
+{
+  "summary": {
+    "available_officers": 50,
+    "zones_selected": 50,
+    "unique_locations_covered": 29,
+    "total_eligible_locations": 556,
+    "total_expected_priority_score": 1475.29,
+    "officers_by_zone_color": {
+      "GREEN": 5,
+      "RED": 30,
+      "YELLOW": 15
+    }
+  },
+  "allocations": [
+    {
+      "grid_cell_id": "12.97_77.55",
+      "date_hour": "2024-03-16 12:00:00+05:30",
+      "zone_color": "RED",
+      "officers_allocated": 1,
+      "expected_priority_score": 41.358839517327375
+    },
+    {
+      "grid_cell_id": "12.98_77.61",
+      "date_hour": "2024-03-09 08:00:00+05:30",
+      "zone_color": "RED",
+      "officers_allocated": 1,
+      "expected_priority_score": 41.309685545172506
+    },
+    {
+      "grid_cell_id": "12.97_77.55",
+      "date_hour": "2024-03-23 08:00:00+05:30",
+      "zone_color": "RED",
+      "officers_allocated": 1,
+      "expected_priority_score": 40.97399999634517
+    },
+    {
+      "grid_cell_id": "12.98_77.61",
+      "date_hour": "2024-03-31 08:00:00+05:30",
+      "zone_color": "RED",
+      "officers_allocated": 1,
+      "expected_priority_score": 39.39561792656657
+    },
+    {
+      "grid_cell_id": "12.97_77.54",
+      "date_hour": "2024-01-16 11:00:00+05:30",
+      "zone_color": "RED",
+      "officers_allocated": 1,
+      "expected_priority_score": 38.98064087420805
+    },
+    {
+      "grid_cell_id": "12.98_77.58",
+      "date_hour": "2024-04-07 11:00:00+05:30",
+      "zone_color": "RED",
+      "officers_allocated": 1,
+      "expected_priority_score": 38.864872415169074
+    },
+    {
+      "grid_cell_id": "12.97_77.54",
+      "date_hour": "2024-03-12 11:00:00+05:30",
+      "zone_color": "RED",
+      "officers_allocated": 1,
+      "expected_priority_score": 38.39223428352883
+    },
+    {
+      "grid_cell_id": "12.98_77.58",
+      "date_hour": "2024-03-31 11:00:00+05:30",
+      "zone_color": "RED",
+      "officers_allocated": 1,
+      "expected_priority_score": 36.79802521132078
+    },
+    {
+      "grid_cell_id": "12.96_77.58",
+      "date_hour": "2024-03-12 07:00:00+05:30",
+      "zone_color": "RED",
+      "officers_allocated": 1,
+      "expected_priority_score": 36.71088759721112
+    },
+    {
+      "grid_cell_id": "12.96_77.58",
+      "date_hour": "2024-03-14 07:00:00+05:30",
+      "zone_color": "RED",
+      "officers_allocated": 1,
+      "expected_priority_score": 36.27337408901102
+    },
+    {
+      "grid_cell_id": "12.97_77.58",
+      "date_hour": "2024-01-27 07:00:00+05:30",
+      "zone_color": "RED",
+      "officers_allocated": 1,
+      "expected_priority_score": 35.750693678654685
+    },
+    {
+      "grid_cell_id": "12.97_77.58",
+      "date_hour": "2024-03-12 05:00:00+05:30",
+      "zone_color": "RED",
+      "officers_allocated": 1,
+      "expected_priority_score": 35.559225611724415
+    },
+    {
+      "grid_cell_id": "12.94_77.62",
+      "date_hour": "2024-03-08 06:00:00+05:30",
+      "zone_color": "RED",
+      "officers_allocated": 1,
+      "expected_priority_score": 33.84041150423826
+    },
+    {
+      "grid_cell_id": "12.94_77.62",
+      "date_hour": "2024-03-10 11:00:00+05:30",
+      "zone_color": "RED",
+      "officers_allocated": 1,
+      "expected_priority_score": 33.29436923154373
+    },
+    {
+      "grid_cell_id": "13.0_77.55",
+      "date_hour": "2024-03-22 06:00:00+05:30",
+      "zone_color": "RED",
+      "officers_allocated": 1,
+      "expected_priority_score": 33.19291368570818
+    },
+    {
+      "grid_cell_id": "13.0_77.55",
+      "date_hour": "2024-04-07 12:00:00+05:30",
+      "zone_color": "RED",
+      "officers_allocated": 1,
+      "expected_priority_score": 33.06977509186028
+    },
+    {
+      "grid_cell_id": "12.98_77.57",
+      "date_hour": "2024-03-31 02:00:00+05:30",
+      "zone_color": "RED",
+      "officers_allocated": 1,
+      "expected_priority_score": 32.99605526496276
+    },
+    {
+      "grid_cell_id": "12.96_77.6",
+      "date_hour": "2023-12-06 05:00:00+05:30",
+      "zone_color": "RED",
+      "officers_allocated": 1,
+      "expected_priority_score": 32.82051183326176
+    },
+    {
+      "grid_cell_id": "12.99_77.59",
+      "date_hour": "2024-03-09 10:00:00+05:30",
+      "zone_color": "RED",
+      "officers_allocated": 1,
+      "expected_priority_score": 32.77386862341475
+    },
+    {
+      "grid_cell_id": "12.98_77.6",
+      "date_hour": "2024-01-16 08:00:00+05:30",
+      "zone_color": "RED",
+      "officers_allocated": 1,
+      "expected_priority_score": 32.73160595587519
+    },
+    {
+      "grid_cell_id": "12.98_77.6",
+      "date_hour": "2024-03-23 09:00:00+05:30",
+      "zone_color": "RED",
+      "officers_allocated": 1,
+      "expected_priority_score": 32.71782771418452
+    },
+    {
+      "grid_cell_id": "12.96_77.56",
+      "date_hour": "2024-03-18 13:00:00+05:30",
+      "zone_color": "RED",
+      "officers_allocated": 1,
+      "expected_priority_score": 32.53086532125805
+    },
+    {
+      "grid_cell_id": "12.99_77.55",
+      "date_hour": "2024-03-21 03:00:00+05:30",
+      "zone_color": "RED",
+      "officers_allocated": 1,
+      "expected_priority_score": 32.456219117865444
+    },
+    {
+      "grid_cell_id": "12.99_77.59",
+      "date_hour": "2023-12-08 09:00:00+05:30",
+      "zone_color": "RED",
+      "officers_allocated": 1,
+      "expected_priority_score": 32.450111240444414
+    },
+    {
+      "grid_cell_id": "12.99_77.55",
+      "date_hour": "2024-04-07 09:00:00+05:30",
+      "zone_color": "RED",
+      "officers_allocated": 1,
+      "expected_priority_score": 32.44603051608427
+    },
+    {
+      "grid_cell_id": "12.96_77.6",
+      "date_hour": "2024-01-17 05:00:00+05:30",
+      "zone_color": "RED",
+      "officers_allocated": 1,
+      "expected_priority_score": 32.29709225422281
+    },
+    {
+      "grid_cell_id": "12.94_77.57",
+      "date_hour": "2024-03-21 01:00:00+05:30",
+      "zone_color": "RED",
+      "officers_allocated": 1,
+      "expected_priority_score": 32.2876162629754
+    },
+    {
+      "grid_cell_id": "12.98_77.57",
+      "date_hour": "2023-11-19 03:00:00+05:30",
+      "zone_color": "RED",
+      "officers_allocated": 1,
+      "expected_priority_score": 32.20824319234934
+    },
+    {
+      "grid_cell_id": "12.91_77.6",
+      "date_hour": "2024-03-29 11:00:00+05:30",
+      "zone_color": "RED",
+      "officers_allocated": 1,
+      "expected_priority_score": 32.16016204749114
+    },
+    {
+      "grid_cell_id": "12.91_77.6",
+      "date_hour": "2024-01-06 10:00:00+05:30",
+      "zone_color": "RED",
+      "officers_allocated": 1,
+      "expected_priority_score": 31.9763148899625
+    },
+    {
+      "grid_cell_id": "12.93_77.69",
+      "date_hour": "2024-03-16 04:00:00+05:30",
+      "zone_color": "YELLOW",
+      "officers_allocated": 1,
+      "expected_priority_score": 23.16971030235851
+    },
+    {
+      "grid_cell_id": "12.93_77.69",
+      "date_hour": "2024-03-12 10:00:00+05:30",
+      "zone_color": "YELLOW",
+      "officers_allocated": 1,
+      "expected_priority_score": 22.719273352501
+    },
+    {
+      "grid_cell_id": "12.96_77.56",
+      "date_hour": "2024-03-08 03:00:00+05:30",
+      "zone_color": "YELLOW",
+      "officers_allocated": 1,
+      "expected_priority_score": 22.70214699766295
+    },
+    {
+      "grid_cell_id": "12.96_77.62",
+      "date_hour": "2024-02-01 11:00:00+05:30",
+      "zone_color": "YELLOW",
+      "officers_allocated": 1,
+      "expected_priority_score": 22.701161223319865
+    },
+    {
+      "grid_cell_id": "12.95_77.61",
+      "date_hour": "2024-04-03 03:00:00+05:30",
+      "zone_color": "YELLOW",
+      "officers_allocated": 1,
+      "expected_priority_score": 22.674029729117926
+    },
+    {
+      "grid_cell_id": "13.0_77.54",
+      "date_hour": "2024-02-08 11:00:00+05:30",
+      "zone_color": "YELLOW",
+      "officers_allocated": 1,
+      "expected_priority_score": 22.669668650076176
+    },
+    {
+      "grid_cell_id": "12.93_77.55",
+      "date_hour": "2024-04-05 11:00:00+05:30",
+      "zone_color": "YELLOW",
+      "officers_allocated": 1,
+      "expected_priority_score": 22.6572816235271
+    },
+    {
+      "grid_cell_id": "12.94_77.57",
+      "date_hour": "2024-02-04 08:00:00+05:30",
+      "zone_color": "YELLOW",
+      "officers_allocated": 1,
+      "expected_priority_score": 22.650178718107945
+    },
+    {
+      "grid_cell_id": "12.98_77.56",
+      "date_hour": "2024-04-01 01:00:00+05:30",
+      "zone_color": "YELLOW",
+      "officers_allocated": 1,
+      "expected_priority_score": 22.64547883084819
+    },
+    {
+      "grid_cell_id": "12.97_77.59",
+      "date_hour": "2024-03-28 10:00:00+05:30",
+      "zone_color": "YELLOW",
+      "officers_allocated": 1,
+      "expected_priority_score": 22.62840810133282
+    },
+    {
+      "grid_cell_id": "13.0_77.58",
+      "date_hour": "2024-03-29 03:00:00+05:30",
+      "zone_color": "YELLOW",
+      "officers_allocated": 1,
+      "expected_priority_score": 22.619730837372778
+    },
+    {
+      "grid_cell_id": "13.0_77.54",
+      "date_hour": "2024-02-20 04:00:00+05:30",
+      "zone_color": "YELLOW",
+      "officers_allocated": 1,
+      "expected_priority_score": 22.61916426291823
+    },
+    {
+      "grid_cell_id": "12.98_77.56",
+      "date_hour": "2024-04-05 04:00:00+05:30",
+      "zone_color": "YELLOW",
+      "officers_allocated": 1,
+      "expected_priority_score": 22.604479268992502
+    },
+    {
+      "grid_cell_id": "12.93_77.55",
+      "date_hour": "2024-02-07 06:00:00+05:30",
+      "zone_color": "YELLOW",
+      "officers_allocated": 1,
+      "expected_priority_score": 22.59681601135418
+    },
+    {
+      "grid_cell_id": "12.97_77.59",
+      "date_hour": "2024-04-03 09:00:00+05:30",
+      "zone_color": "YELLOW",
+      "officers_allocated": 1,
+      "expected_priority_score": 22.57298041087882
+    },
+    {
+      "grid_cell_id": "12.96_77.53",
+      "date_hour": "2024-02-28 12:00:00+05:30",
+      "zone_color": "GREEN",
+      "officers_allocated": 1,
+      "expected_priority_score": 18.608947956417715
+    },
+    {
+      "grid_cell_id": "12.91_77.63",
+      "date_hour": "2024-02-13 13:00:00+05:30",
+      "zone_color": "GREEN",
+      "officers_allocated": 1,
+      "expected_priority_score": 17.44359142842637
+    },
+    {
+      "grid_cell_id": "13.07_77.59",
+      "date_hour": "2024-03-21 07:00:00+05:30",
+      "zone_color": "GREEN",
+      "officers_allocated": 1,
+      "expected_priority_score": 16.82922377366195
+    },
+    {
+      "grid_cell_id": "12.98_77.59",
+      "date_hour": "2024-04-02 06:00:00+05:30",
+      "zone_color": "GREEN",
+      "officers_allocated": 1,
+      "expected_priority_score": 16.81308717494099
+    },
+    {
+      "grid_cell_id": "12.99_77.54",
+      "date_hour": "2024-01-23 02:00:00+05:30",
+      "zone_color": "GREEN",
+      "officers_allocated": 1,
+      "expected_priority_score": 16.74512436297131
+    }
+  ]
+}

@@ -1,0 +1,164 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>IntelliPark — Enforcement Intelligence</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;500;600;700&family=IBM+Plex+Sans:wght@400;500;600&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+<canvas id="radar-canvas"></canvas>
+
+<div class="scanline-overlay"></div>
+
+<header class="topbar">
+  <div class="topbar-mark">INTELLIPARK</div>
+</header>
+
+<main>
+
+  <section class="hero">
+    <div class="hero-content">
+      <div class="hero-eyebrow">BENGALURU · Parking isn't a walk in the park after all</div>
+      <h1 class="hero-title">
+        Every violation<br>
+        has a <span class="accent-red">location.</span><br>
+        Every location<br>
+        has a <span class="accent-yellow">pattern.</span>
+      </h1>
+      <p class="hero-sub">
+        IntelliPark turns raw parking-violation records into a live
+        priority map — where to send officers, which vehicles to
+        flag, and how confident to be about each call.
+      </p>
+      <div class="hero-actions">
+        <a href="#dashboard-link" class="btn btn-primary">Open dashboard</a>
+        <a href="#how-it-works" class="btn btn-ghost">How it works</a>
+      </div>
+    </div>
+    <div class="hero-resolve-label">RESOLVING SIGNAL…</div>
+  </section>
+
+  <section class="stats" id="stats">
+    <div class="stats-grid">
+      <div class="stat-card">
+        <div class="stat-value" data-counter data-target="0" id="stat-gridhours">0</div>
+        <div class="stat-label">Grid-hours scored<br><span class="stat-note">per deployment window</span></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" data-counter data-target="0" id="stat-critical">0</div>
+        <div class="stat-label">Vehicles flagged Critical<br><span class="stat-note">recommended action: immediate tow</span></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" data-counter data-target="0" id="stat-zones">0</div>
+        <div class="stat-label">Red zones identified<br><span class="stat-note">highest-priority grid cells</span></div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-value" data-counter data-target="0" id="stat-officers">0</div>
+        <div class="stat-label">Officers in last allocation<br><span class="stat-note">capped per-location, per config</span></div>
+      </div>
+    </div>
+    <p class="stats-source">
+      Figures pulled live from your pipeline outputs on dashboard load —
+      not hardcoded here. See the note below.
+    </p>
+  </section>
+
+  <section class="how-it-works" id="how-it-works">
+    <div class="section-head">
+      <div class="section-eyebrow">PIPELINE</div>
+      <h2>Five modules, one priority score</h2>
+    </div>
+
+    <div class="pipeline-track">
+      <div class="pipeline-step">
+        <div class="pipeline-tag">edi</div>
+        <h3>Demand &amp; gap scoring</h3>
+        <p>Compares predicted vs. observed violations per grid-hour — or, in forecast mode, projects forward demand for hours that haven't happened yet.</p>
+      </div>
+      <div class="pipeline-step">
+        <div class="pipeline-tag">flow_proxy</div>
+        <h3>Obstruction proxy</h3>
+        <p>Built from violation type and vehicle size — an explicitly labeled stand-in for real traffic-flow sensors, which this dataset doesn't have.</p>
+      </div>
+      <div class="pipeline-step">
+        <div class="pipeline-tag">location_context</div>
+        <h3>Junction matching</h3>
+        <p>Keyword-matches junction_name strings against known landmarks. About 60% of zones have no named junction and stay UNCLASSIFIED.</p>
+      </div>
+      <div class="pipeline-step">
+        <div class="pipeline-tag">optimizer</div>
+        <h3>Officer allocation</h3>
+        <p>Greedy allocation against a configurable officer budget, capped per physical location so coverage doesn't collapse onto a handful of hotspots.</p>
+      </div>
+      <div class="pipeline-step">
+        <div class="pipeline-tag">repeat_offender</div>
+        <h3>Vehicle risk tiers</h3>
+        <p>Tracks repeat plates across the dataset window and tiers them LOW through CRITICAL based on violation frequency and concentration.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="map-preview" id="map-preview">
+    <div class="section-head">
+      <div class="section-eyebrow">LIVE ON THE DASHBOARD</div>
+      <h2>Radar-style density, real OpenStreetMap streets</h2>
+      <p class="section-sub">
+        The dashboard's hotspot map renders priority as a smoothed
+        intensity field — the same visual language as a weather-radar
+        app — directly over OSM tiles, with every cell traceable back
+        to a real lat/lon in the dataset.
+      </p>
+    </div>
+    <div class="map-frame">
+      <div class="map-frame-inner" id="map-frame-canvas-host"></div>
+      <div class="map-legend">
+        <div class="legend-item"><span class="legend-dot dot-green"></span>GREEN — clear</div>
+        <div class="legend-item"><span class="legend-dot dot-yellow"></span>YELLOW — caution</div>
+        <div class="legend-item"><span class="legend-dot dot-red"></span>RED — priority</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="honesty" id="honesty">
+    <div class="section-head">
+      <div class="section-eyebrow">BEFORE YOU TRUST A NUMBER</div>
+      <h2>What this is, and isn't</h2>
+    </div>
+    <div class="honesty-grid">
+      <div class="honesty-card">
+        <div class="honesty-tag">DATA WINDOW</div>
+        <p>Historical dataset capped at April 2024. Forecast mode projects the week right after that — a demonstration of the mechanism, not a live today-feed.</p>
+      </div>
+      <div class="honesty-card">
+        <div class="honesty-tag">FLOW METRIC</div>
+        <p>No traffic sensors in this dataset. Flow impact is inferred from violation type and vehicle size, not measured.</p>
+      </div>
+      <div class="honesty-card">
+        <div class="honesty-tag">SIMULATOR</div>
+        <p>The policy simulator re-runs the same scoring formula with different inputs. It shows how the recommendation shifts — not a causal forecast of real-world outcomes.</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="cta" id="dashboard-link">
+    <h2>See the live priority map</h2>
+    <p>Open the full dashboard — hotspot map, officer allocation, repeat-offender alerts, and the policy simulator, all wired to your actual pipeline outputs.</p>
+    <a href="http://localhost:5173/" class="btn btn-primary btn-large" id="dashboard-cta-link" target="_blank" rel="noopener noreferrer">Open dashboard →</a>
+  </section>
+
+</main>
+
+<footer class="footer">
+  <span>INTELLIPARK</span>
+  <span class="footer-dim">ENFORCEMENT INTELLIGENCE · BENGALURU</span>
+</footer>
+
+<script src="dither.js"></script>
+<script src="counter.js"></script>
+<script src="main.js"></script>
+</body>
+</html>
