@@ -31,7 +31,7 @@ COPY module6_optimizer/output/allocations_future_forecast.json /data/module6_opt
 
 # Set this to your deployed frontend's actual origin (Render/Vercel
 # give you the URL after first deploy; redeploy once you have it).
-ENV INTELLIPARK_CORS_ORIGINS=https://intellipark-beta.vercel.app/
+ENV INTELLIPARK_CORS_ORIGINS=https://intellipark-beta.vercel.app
 
 ENV PORT=8000
 EXPOSE 8000
