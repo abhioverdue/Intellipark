@@ -79,7 +79,7 @@ ALLOWED_ORIGINS = [
     o.strip()
     for o in os.getenv(
         "INTELLIPARK_CORS_ORIGINS",
-        "https://intellipark-beta.vercel.app/",
+        "https://intellipark-beta.vercel.app",
     ).split(",")
     if o.strip()
 ]
