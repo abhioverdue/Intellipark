@@ -2,6 +2,13 @@
 data/raw/*.csv
 
 # Pipeline outputs — regenerate locally with `python run_pipeline.py`.
+#
+# Exception: the "slim deploy bundle" below IS meant to be committed
+# (see DEPLOY.md) so Render/Railway/Fly can build the backend image
+# straight from the repo without re-running the full ML pipeline on
+# every deploy. Everything else under module*/output/ is the full
+# per-violation data (~98MB) and large model files — regenerate
+# locally instead of committing.
 module1_pipeline/output/*
 !module1_pipeline/output/deploy_lookups.json
 !module1_pipeline/output/.gitkeep
@@ -38,5 +45,3 @@ __pycache__/
 
 # OS
 .DS_Store
-
-!.venv/

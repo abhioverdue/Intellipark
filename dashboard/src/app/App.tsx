@@ -17,7 +17,7 @@ import {
   BarChart, Bar, XAxis, YAxis, Tooltip, Cell, ResponsiveContainer,
 } from "recharts";
 import {
-  MapContainer, TileLayer, CircleMarker, Circle, Popup, useMap,
+  MapContainer, TileLayer, CircleMarker, Popup, useMap,
 } from "react-leaflet";
 
 import {
@@ -118,7 +118,7 @@ function parseRiskExplanation(v: RepeatOffendersResponse["criticalVehicles"][0])
     `Its violations are highly concentrated — ` +
     `${(v.topGridConcentration * 100).toFixed(0)}% occur at a single location, ` +
     `suggesting a habitual pattern rather than incidental offences. ` +
-    `Mean enforcement impact score: ${v.meanImpactScore.toFixed(1)}.`
+    `Mean enforcement impact score: ${v.meanImpactScore.toFixed(1)} — above the fleet average, indicating each violation by this vehicle has outsized disruption to traffic flow.`
   );
 }
 
@@ -148,35 +148,6 @@ function ZoneBadge({ zone }: { zone: ZoneColor }) {
 
 function ActionChip({ action }: { action: string }) {
   return <span style={actionChipStyle(action)}>{ACTION_LABEL[action] ?? action}</span>;
-}
-
-function SectionEyebrow({ children }: { children: React.ReactNode }) {
-  return (
-    <div style={{
-      fontFamily: "var(--font-mono)",
-      fontSize: "0.7rem",
-      letterSpacing: "0.1em",
-      color: "var(--ip-yellow)",
-      marginBottom: 12,
-    }}>
-      {children}
-    </div>
-  );
-}
-
-function SectionTitle({ children }: { children: React.ReactNode }) {
-  return (
-    <h2 style={{
-      fontFamily: "var(--font-mono)",
-      fontWeight: 700,
-      fontSize: "clamp(1.2rem, 2vw, 1.6rem)",
-      color: "var(--ip-text)",
-      margin: "0 0 8px",
-      letterSpacing: "-0.01em",
-    }}>
-      {children}
-    </h2>
-  );
 }
 
 function StatCard({ value, label, sub, accent }: {
@@ -337,6 +308,64 @@ function FitBounds({ positions }: { positions: [number, number][] }) {
   return null;
 }
 
+/**
+ * CSS radial-gradient overlay — same technique as landing/index.html's
+ * .map-frame-inner: each hotspot becomes one radial-gradient() stop in a
+ * layered background, sized and coloured by zone and metric intensity.
+ */
+function CssHeatmap({ locs, metricNorm, zone }: {
+  locs: HotspotLocation[];
+  metricNorm: (loc: HotspotLocation) => number;
+  zone: (loc: HotspotLocation) => string;
+}) {
+  const map = useMap();
+  const [bg, setBg] = useState("");
+
+  useEffect(() => {
+    function build() {
+      const size = map.getSize();
+      if (!size.x || !size.y) return;
+
+      const stops = locs.map(loc => {
+        const pt   = map.latLngToContainerPoint([loc.lat, loc.lng]);
+        const norm = metricNorm(loc);
+        const z    = zone(loc);
+
+        const xPct = ((pt.x / size.x) * 100).toFixed(2);
+        const yPct = ((pt.y / size.y) * 100).toFixed(2);
+
+        // Exact same colours as landing/index.html .map-frame-inner
+        const rgb = z === "RED"    ? "255,77,46"
+                  : z === "YELLOW" ? "245,197,24"
+                  :                  "57,184,138";
+
+        const opacity = (0.15 + norm * 0.12).toFixed(2);
+        const spread  = (5 + norm * 4).toFixed(1);
+
+        return `radial-gradient(circle at ${xPct}% ${yPct}%, rgba(${rgb},${opacity}), transparent ${spread}%)`;
+      });
+
+      setBg(stops.join(", "));
+    }
+
+    build();
+    map.on("moveend zoomend resize", build);
+    return () => { map.off("moveend zoomend resize", build); };
+  }, [map, locs, metricNorm, zone]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  if (!bg) return null;
+
+  return (
+    <div style={{
+      position: "absolute",
+      inset: 0,
+      background: bg,
+      pointerEvents: "none",
+      zIndex: 400,
+    }} />
+  );
+}
+
 function HotspotMap({ mode, dark }: { mode: DeployMode; dark: boolean }) {
   const [data, setData] = useState<Awaited<ReturnType<typeof fetchHotspots>> | null>(null);
   const [loading, setLoading] = useState(true);
@@ -363,6 +392,22 @@ function HotspotMap({ mode, dark }: { mode: DeployMode; dark: boolean }) {
   const locs = data.locations;
   const isPast = mode === "historical_gap";
   const selected = locs.find(l => l.gridCellId === selectedId && l.junctionName === locs.find(x => x.gridCellId === selectedId)?.junctionName) ?? locs.find(l => l.gridCellId === selectedId) ?? null;
+
+  // Derive the numeric value for each location based on the selected metric,
+  // then normalise to [0, 1] so circle sizing is metric-agnostic.
+  function metricValue(loc: HotspotLocation): number {
+    switch (metric) {
+      case "Predicted violations":    return loc.predictedViolations;
+      case "Traffic-flow impact":     return loc.flowImpact;
+      case "Recommended patrol units": return loc.recommendedPatrolUnits;
+      default:                        return loc.priorityScore;  // "Priority score"
+    }
+  }
+  const allValues = locs.map(metricValue);
+  const maxVal = Math.max(...allValues, 1);  // avoid div-by-zero on empty/all-zero data
+  function metricNorm(loc: HotspotLocation): number {
+    return metricValue(loc) / maxVal;
+  }
 
   function verdict(loc: HotspotLocation) {
     if (loc.observedViolations === null) return null;
@@ -440,28 +485,18 @@ function HotspotMap({ mode, dark }: { mode: DeployMode; dark: boolean }) {
               />
               <FitBounds positions={positions} />
 
-              {mapView === "smooth" && locs.map((loc, i) => {
-                const col = zoneColor(loc.zone).solid;
-                const radiusMeters = 220 + (loc.priorityScore / 100) * 380;
-                return (
-                  <Circle
-                    key={loc.gridCellId + i}
-                    center={[loc.lat, loc.lng]}
-                    radius={radiusMeters}
-                    pathOptions={{
-                      color: col,
-                      weight: 0,
-                      fillColor: col,
-                      fillOpacity: 0.12 + (loc.priorityScore / 100) * 0.28,
-                    }}
-                  />
-                );
-              })}
+              {mapView === "smooth" && (
+                <CssHeatmap
+                  locs={locs}
+                  metricNorm={metricNorm}
+                  zone={(loc) => loc.zone}
+                />
+              )}
 
               {mapView === "exact" && locs.map((loc, i) => {
                 const c = zoneColor(loc.zone);
                 const isSelected = selectedId === loc.gridCellId;
-                const radius = Math.max(5, loc.priorityScore / 12);
+                const radius = Math.max(5, metricNorm(loc) * 16);
                 return (
                   <CircleMarker
                     key={loc.gridCellId + i}
@@ -1150,9 +1185,9 @@ export default function App() {
           flexShrink: 0, background: "var(--ip-surface)",
         }}>
           <div style={{ display: "flex", alignItems: "center", gap: 12 }}>
-            <span style={{ fontFamily: "var(--font-mono)", fontSize: "0.7rem", letterSpacing: "0.06em", color: "var(--ip-text-dim)" }}>{meta.eyebrow}</span>
-            <span style={{ color: "var(--ip-hairline)" }}>·</span>
-            <span style={{ fontFamily: "var(--font-mono)", fontSize: "0.8rem", fontWeight: 600, color: "var(--ip-text)" }}>{meta.title}</span>
+            <span style={{ fontFamily: "var(--font-mono)", fontSize: "0.72rem", letterSpacing: "0.1em", color: "var(--ip-yellow)", fontWeight: 600 }}>{meta.eyebrow}</span>
+            <span style={{ color: "var(--ip-hairline)", margin: "0 2px" }}>—</span>
+            <span style={{ fontFamily: "var(--font-mono)", fontSize: "0.95rem", fontWeight: 700, color: "var(--ip-text)", letterSpacing: "0.01em" }}>{meta.title}</span>
             {mode === "future_forecast" && section !== "simulator" && section !== "limitations" && (
               <span style={{ background: "rgba(245,197,24,0.12)", color: "var(--ip-yellow)", fontFamily: "var(--font-mono)", fontSize: "0.64rem", fontWeight: 700, letterSpacing: "0.06em", padding: "2px 8px", borderRadius: 4 }}>
                 FORECAST
@@ -1172,12 +1207,6 @@ export default function App() {
             {dark ? "Light" : "Dark"}
           </button>
         </header>
-
-        <div style={{ padding: "18px 28px 14px", borderBottom: "1px solid var(--ip-hairline)", flexShrink: 0, background: "var(--ip-base)" }}>
-          <SectionEyebrow>{meta.eyebrow} — {meta.title.toUpperCase()}</SectionEyebrow>
-          <SectionTitle>{meta.title}</SectionTitle>
-          <p style={{ fontSize: "0.85rem", color: "var(--ip-text-dim)", margin: 0, maxWidth: 600 }}>{meta.sub}</p>
-        </div>
 
         <div style={{ flex: 1, overflowY: "auto", padding: "24px 28px", background: "var(--ip-base)" }}>
           {section === "hotspot"     && <HotspotMap mode={mode} dark={dark} />}

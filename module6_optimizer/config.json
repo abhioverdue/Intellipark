@@ -2,12 +2,7 @@
   "deployment_mode": "future_forecast",
   "max_officers_per_zone": 4,
   "max_officers_per_location": 2,
-  "officer_effectiveness": [
-    1.0,
-    0.7,
-    0.5,
-    0.3
-  ],
+  "officer_effectiveness": [1.0, 0.7, 0.5, 0.3],
   "intercept_rate": 0.35,
   "default_officer_count": 50,
   "zone_multipliers": {
