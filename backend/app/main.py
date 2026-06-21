@@ -11,7 +11,7 @@ match VITE_API_BASE=http://localhost:8000/api in the dashboard's .env.
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
-from . import config
+from . import config, shap_paths
 from .routers import hotspots, allocations, repeat_offenders, simulator, limitations, shap
 
 app = FastAPI(
@@ -58,10 +58,13 @@ def health():
         "module6_optimizer/config.json": config.M6_CONFIG_PATH.exists(),
         "allocations_historical_gap.json": config.ALLOCATIONS_HISTORICAL_PATH.exists(),
         "allocations_future_forecast.json": config.ALLOCATIONS_FUTURE_PATH.exists(),
+        "shap_top_features.parquet": shap_paths.SHAP_TOP_FEATURES_PATH.exists(),
     }
     return {
         "status": "ok" if all(checks.values()) else "incomplete",
         "project_root": str(config.PROJECT_ROOT),
         "outputs": checks,
     }
+
+
 
