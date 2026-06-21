@@ -65,6 +65,10 @@ function cssVars(dark: boolean): React.CSSProperties {
    SHARED UTILITIES
    ========================================================================= */
 
+function fmtCount(n: number): string {
+  return Math.round(n).toLocaleString();
+}
+
 function zoneColor(zone: ZoneColor): { bg: string; text: string; solid: string } {
   const map: Record<ZoneColor, { bg: string; text: string; solid: string }> = {
     RED:    { bg: "rgba(255,77,46,0.15)",   text: "#FF4D2E",              solid: "#FF4D2E" },
@@ -779,7 +783,7 @@ function HotspotMap({ mode, dark }: { mode: DeployMode; dark: boolean }) {
                     <Popup>
                       <div style={{ fontFamily: "var(--font-mono)", fontSize: "0.78rem" }}>
                         <strong>{loc.junctionName}</strong><br />
-                        {loc.predictedViolations} predicted &middot; {loc.recommendedPatrolUnits} officers<br />
+                        {fmtCount(loc.predictedViolations)} predicted &middot; {loc.recommendedPatrolUnits} officers<br />
                         Zone: {loc.zone}
                       </div>
                     </Popup>
@@ -852,7 +856,7 @@ function HotspotMap({ mode, dark }: { mode: DeployMode; dark: boolean }) {
                   {loc.junctionName}
                 </div>
                 <div style={{ fontFamily: "var(--font-mono)", fontSize: "0.68rem", color: "var(--ip-text-dim)", marginTop: 2 }}>
-                  {loc.predictedViolations} pred · {loc.recommendedPatrolUnits} officers
+                  {fmtCount(loc.predictedViolations)} pred · {loc.recommendedPatrolUnits} officers
                 </div>
               </div>
               <ZoneBadge zone={loc.zone} />
@@ -893,7 +897,7 @@ function HotspotMap({ mode, dark }: { mode: DeployMode; dark: boolean }) {
               <div style={{ display: "flex", gap: 24 }}>
                 <div style={{ textAlign: "center" }}>
                   <div style={{ fontFamily: "var(--font-mono)", fontSize: "1.8rem", fontWeight: 700, color: "var(--ip-text)", fontVariantNumeric: "tabular-nums" }}>
-                    {selected.predictedViolations}
+                    {fmtCount(selected.predictedViolations)}
                   </div>
                   <div style={{ fontFamily: "var(--font-mono)", fontSize: "0.68rem", color: "var(--ip-text-dim)" }}>
                     {isPast ? "PREDICTED" : "FORECAST"}
@@ -902,7 +906,7 @@ function HotspotMap({ mode, dark }: { mode: DeployMode; dark: boolean }) {
                 {isPast && selected.observedViolations !== null && (
                   <div style={{ textAlign: "center" }}>
                     <div style={{ fontFamily: "var(--font-mono)", fontSize: "1.8rem", fontWeight: 700, color: "var(--ip-text)", fontVariantNumeric: "tabular-nums" }}>
-                      {selected.observedViolations}
+                      {fmtCount(selected.observedViolations)}
                     </div>
                     <div style={{ fontFamily: "var(--font-mono)", fontSize: "0.68rem", color: "var(--ip-text-dim)" }}>ACTUAL</div>
                   </div>
@@ -915,7 +919,7 @@ function HotspotMap({ mode, dark }: { mode: DeployMode; dark: boolean }) {
                 border: `1px solid ${v.color}40`, borderRadius: 6,
                 marginBottom: 16, fontSize: "0.88rem", color: v.color, fontWeight: 500,
               }}>
-                {v.label} ({selected.predictedViolations} predicted{selected.observedViolations !== null ? `, ${selected.observedViolations} logged` : ""})
+                {v.label} ({fmtCount(selected.predictedViolations)} predicted{selected.observedViolations !== null ? `, ${fmtCount(selected.observedViolations)} logged` : ""})
               </div>
             ) : (
               <div style={{
@@ -924,7 +928,7 @@ function HotspotMap({ mode, dark }: { mode: DeployMode; dark: boolean }) {
                 marginBottom: 16, fontSize: "0.82rem", color: "var(--ip-text-dim)",
               }}>
                 <strong style={{ color: "var(--ip-yellow)" }}>Forecast — </strong>
-                {selected.predictedViolations} violations expected. This is a projection for a future period, not an observation.
+                {fmtCount(selected.predictedViolations)} violations expected. This is a projection for a future period, not an observation.
               </div>
             )}
             <div style={{ fontFamily: "var(--font-mono)", fontSize: "0.7rem", letterSpacing: "0.06em", color: "var(--ip-text-dim)", marginBottom: 10 }}>
@@ -1495,4 +1499,3 @@ export default function App() {
     </div>
   );
 }
-
