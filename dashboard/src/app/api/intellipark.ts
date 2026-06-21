@@ -11,8 +11,6 @@
  *               module4_hotspot_forecast/output/future_grid_forecasts.parquet
  *               module4_hotspot_forecast/output/feature_importance.csv
  *               module4_hotspot_forecast/output/training_data.parquet
- *               module4_hotspot_forecast/output/shap_top_features.parquet
- *               (shap_explain.py — served via GET /shap/{gridCellId})
  *   Module 5  → module5_edi/output/edi_scores.parquet            (historical)
  *               module5_edi/output/future_priority_scores.parquet (forecast)
  *               module5_edi/output/edi_scores_with_flow.parquet
@@ -194,7 +192,7 @@ export interface LimitationsResponse {
 }
 
 // ---------------------------------------------------------------------------
-// Section 6 — Model Explainability (SHAP)
+// SHAP explanations
 // ---------------------------------------------------------------------------
 
 export interface ShapContributor {
@@ -216,14 +214,7 @@ export interface ShapExplanationResponse {
   explanations: ShapExplanation[];
 }
 
-/**
- * SHAP fetch has richer states than the rest of this file's fetchOrMock
- * pattern, because a 404 here is meaningful (cell exists in hotspots but
- * shap_explain.py never scored it) and must never be silently swallowed
- * into a mock response — that would misrepresent real backend data as
- * present when it isn't. So this one bypasses fetchOrMock deliberately.
- */
-export type ShapFetchState =
+export type ShapFetchResult =
   | { status: "real"; data: ShapExplanationResponse }
   | { status: "mock"; data: ShapExplanationResponse }
   | { status: "not_found"; gridCellId: string }
@@ -312,25 +303,19 @@ export async function fetchLimitations(): Promise<LimitationsResponse> {
 }
 
 /**
- * SHAP explanation for a single grid cell ("why is this zone flagged").
- * Backend reads: module4_hotspot_forecast/output/shap_top_features.parquet
- * via GET /shap/{gridCellId} (optionally ?model=violation_count|impact_score).
+ * Per-cell model explanations.
+ * Backend reads: shap_top_features.parquet
  *
- * Does not use fetchOrMock — see ShapFetchState comment above for why a
- * 404 needs to stay distinguishable from "no backend configured".
+ * Unlike the dashboard summary calls, a configured backend error is surfaced
+ * to the panel. A 404 means the selected hotspot exists but has no SHAP row.
  */
-export async function fetchShapExplanation(
-  gridCellId: string,
-  model?: "violation_count" | "impact_score"
-): Promise<ShapFetchState> {
+export async function fetchShapExplanation(gridCellId: string): Promise<ShapFetchResult> {
   if (!BASE) {
     return { status: "mock", data: mockShapExplanation(gridCellId) };
   }
 
-  const qs = model ? `?model=${model}` : "";
-
   try {
-    const res = await fetch(`${BASE}/shap/${encodeURIComponent(gridCellId)}${qs}`);
+    const res = await fetch(`${BASE}/shap/${encodeURIComponent(gridCellId)}`);
 
     if (res.status === 404) {
       return { status: "not_found", gridCellId };
@@ -338,7 +323,7 @@ export async function fetchShapExplanation(
 
     if (!res.ok) {
       const text = await res.text().catch(() => res.statusText);
-      return { status: "error", message: `${res.status} — ${text}` };
+      return { status: "error", message: `${res.status} - ${text}` };
     }
 
     const data = (await res.json()) as ShapExplanationResponse;
@@ -617,6 +602,38 @@ function mockSimulatorDefaults(): SimulatorDefaults {
   };
 }
 
+function mockShapExplanation(gridCellId: string): ShapExplanationResponse {
+  return {
+    gridCellId,
+    explanations: [
+      {
+        gridCellId,
+        dateHour: new Date().toISOString(),
+        model: "violation_count",
+        baseValue: 5.1,
+        predictedValue: 9.4,
+        topContributors: [
+          { feature: "violation_count_rolling_24", shapValue: 2.3 },
+          { feature: "is_weekend", shapValue: 1.1 },
+          { feature: "critical_ratio", shapValue: 0.9 },
+        ],
+      },
+      {
+        gridCellId,
+        dateHour: new Date().toISOString(),
+        model: "impact_score",
+        baseValue: 48.2,
+        predictedValue: 67.5,
+        topContributors: [
+          { feature: "avg_impact_score_rolling_24", shapValue: 11.4 },
+          { feature: "hour_sin", shapValue: 6.2 },
+          { feature: "repeat_offender_ratio", shapValue: -2.1 },
+        ],
+      },
+    ],
+  };
+}
+
 function mockLimitations(): LimitationsResponse {
   return {
     featureImportance: [
@@ -636,38 +653,6 @@ function mockLimitations(): LimitationsResponse {
       { label: "Grid cells with named junction", value: "~40%" },
       { label: "Dataset coverage",             value: "Nov 2023 – Apr 2024" },
       { label: "Unique grid cells",            value: "217" },
-    ],
-  };
-}
-
-function mockShapExplanation(gridCellId: string): ShapExplanationResponse {
-  return {
-    gridCellId,
-    explanations: [
-      {
-        gridCellId,
-        dateHour: new Date().toISOString(),
-        model: "violation_count",
-        baseValue: 5.1,
-        predictedValue: 9.4,
-        topContributors: [
-          { feature: "violation_count_rolling_24", shapValue: 2.3 },
-          { feature: "is_weekend",                 shapValue: 1.1 },
-          { feature: "critical_ratio",             shapValue: 0.9 },
-        ],
-      },
-      {
-        gridCellId,
-        dateHour: new Date().toISOString(),
-        model: "impact_score",
-        baseValue: 48.2,
-        predictedValue: 67.5,
-        topContributors: [
-          { feature: "avg_impact_score_rolling_24", shapValue: 11.4 },
-          { feature: "hour_sin",                    shapValue:  6.2 },
-          { feature: "repeat_offender_ratio",       shapValue: -2.1 },
-        ],
-      },
     ],
   };
 }
