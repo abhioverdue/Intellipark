@@ -330,7 +330,7 @@ interface RadarPoint {
 
 // Zone → radar color (RGB, will be used in canvas gradient stops)
 const RADAR_COLOR: Record<ZoneColor, [number, number, number]> = {
-  RED:    [255, 70,  50], 
+  RED:    [255, 70,  50],
   YELLOW: [245, 197, 24],
   GREEN:  [57,  184, 138],
 };
@@ -389,23 +389,31 @@ function RadarOverlay({ points }: { points: RadarPoint[] }) {
         // overlapping blobs to add RGB channels and blow out to white.
         ctx.globalCompositeOperation = "source-over";
 
-        for (const pt of points) {
+        const sortedPoints = [...points].sort((a, b) => a.priorityScore - b.priorityScore);
+        for (const pt of sortedPoints) {
           const px = m.latLngToContainerPoint([pt.lat, pt.lng]);
 
           const zoom = m.getZoom();
-          const baseRadius = 60 * Math.pow(2, zoom - 11);
-          const radius = Math.max(40, Math.min(300, baseRadius * (0.6 + (pt.priorityScore / 100) * 0.9)));
+          const zoomScale = Math.pow(2, zoom - 11);
+          const intensity = Math.max(0.35, Math.min(1, pt.priorityScore / 100));
+          const radius = Math.max(46, Math.min(170, 48 * zoomScale * (0.95 + intensity * 0.75)));
 
           const [r, g, b] = RADAR_COLOR[pt.zone];
-          // Low individual alpha so stacked blobs stay coloured, not white.
-          // Even 4 overlapping cells at 0.28 peak only reach ~0.7 combined.
-          const peakAlpha = (0.05 + (pt.priorityScore / 100) * 0.12);
-
           const grad = ctx.createRadialGradient(px.x, px.y, 0, px.x, px.y, radius);
-          grad.addColorStop(0,    `rgba(${r},${g},${b},${peakAlpha.toFixed(3)})`);
-          grad.addColorStop(0.4,  `rgba(${r},${g},${b},${(peakAlpha * 0.5).toFixed(3)})`);
-          grad.addColorStop(0.75, `rgba(${r},${g},${b},${(peakAlpha * 0.15).toFixed(3)})`);
-          grad.addColorStop(1,    `rgba(${r},${g},${b},0)`);
+          if (pt.zone === "RED") {
+            grad.addColorStop(0, `rgba(255,77,46,${(0.30 * intensity).toFixed(3)})`);
+            grad.addColorStop(0.26, `rgba(245,197,24,${(0.22 * intensity).toFixed(3)})`);
+            grad.addColorStop(0.62, `rgba(57,184,138,${(0.14 * intensity).toFixed(3)})`);
+          } else if (pt.zone === "YELLOW") {
+            grad.addColorStop(0, `rgba(245,197,24,${(0.26 * intensity).toFixed(3)})`);
+            grad.addColorStop(0.38, `rgba(255,145,48,${(0.16 * intensity).toFixed(3)})`);
+            grad.addColorStop(0.72, `rgba(57,184,138,${(0.12 * intensity).toFixed(3)})`);
+          } else {
+            grad.addColorStop(0, `rgba(${r},${g},${b},${(0.18 * intensity).toFixed(3)})`);
+            grad.addColorStop(0.48, `rgba(90,210,160,${(0.11 * intensity).toFixed(3)})`);
+            grad.addColorStop(0.78, `rgba(245,197,24,${(0.06 * intensity).toFixed(3)})`);
+          }
+          grad.addColorStop(1, `rgba(${r},${g},${b},0)`);
 
           ctx.beginPath();
           ctx.arc(px.x, px.y, radius, 0, Math.PI * 2);
@@ -414,7 +422,7 @@ function RadarOverlay({ points }: { points: RadarPoint[] }) {
         }
 
         // Gentle blur for feathered radar look — low enough not to wash out colours.
-        canvas.style.filter = "blur(2px)";
+        canvas.style.filter = "blur(3px) saturate(1.45) contrast(1.12)";
       },
     });
 
@@ -502,6 +510,13 @@ function HotspotMap({ mode, dark }: { mode: DeployMode; dark: boolean }) {
   }
 
   const positions: [number, number][] = locs.map(loc => [loc.lat, loc.lng]);
+  const smoothPositions: [number, number][] = useMemo(
+    () => [...locs]
+      .sort((a, b) => b.priorityScore - a.priorityScore)
+      .slice(0, Math.min(160, locs.length))
+      .map(loc => [loc.lat, loc.lng]),
+    [locs],
+  );
   const tileClass = `ip-leaflet-tiles${dark ? " ip-leaflet-tiles-dark" : ""}`;
 
   return (
@@ -567,7 +582,7 @@ function HotspotMap({ mode, dark }: { mode: DeployMode; dark: boolean }) {
                 url="https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png"
                 attribution='&copy; <a href="https://www.openstreetmap.org/copyright">OpenStreetMap</a> contributors'
               />
-              <FitBounds positions={positions} />
+              <FitBounds positions={mapView === "smooth" ? smoothPositions : positions} />
 
               {mapView === "smooth" && (
                 <RadarOverlay
