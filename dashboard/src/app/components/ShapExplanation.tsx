@@ -12,104 +12,16 @@
  */
 
 import { useEffect, useState } from "react";
-
-// ---------------------------------------------------------------------------
-// Types
-// ---------------------------------------------------------------------------
-
-export interface ShapContributor {
-  feature: string;
-  shapValue: number;
-}
-
-export interface ShapExplanation {
-  gridCellId: string;
-  dateHour: string;
-  model: "violation_count" | "impact_score";
-  baseValue: number;
-  predictedValue: number;
-  topContributors: ShapContributor[];
-}
-
-export interface ShapExplanationResponse {
-  gridCellId: string;
-  explanations: ShapExplanation[];
-}
+import {
+  fetchShapExplanation,
+  type ShapExplanation,
+  type ShapFetchResult,
+} from "../api/intellipark";
 
 type FetchState =
   | { status: "loading" }
-  | { status: "real";  data: ShapExplanationResponse }
-  | { status: "mock";  data: ShapExplanationResponse }
-  | { status: "not_found"; gridCellId: string }
-  | { status: "error"; message: string };
+  | ShapFetchResult;
 
-// ---------------------------------------------------------------------------
-// Fetch
-// ---------------------------------------------------------------------------
-
-const BASE = (import.meta.env?.VITE_API_BASE as string) ?? "";
-
-function mockShapExplanation(gridCellId: string): ShapExplanationResponse {
-  return {
-    gridCellId,
-    explanations: [
-      {
-        gridCellId,
-        dateHour: new Date().toISOString(),
-        model: "violation_count",
-        baseValue: 5.1,
-        predictedValue: 9.4,
-        topContributors: [
-          { feature: "violation_count_rolling_24", shapValue: 2.3 },
-          { feature: "is_weekend",                 shapValue: 1.1 },
-          { feature: "critical_ratio",             shapValue: 0.9 },
-        ],
-      },
-      {
-        gridCellId,
-        dateHour: new Date().toISOString(),
-        model: "impact_score",
-        baseValue: 48.2,
-        predictedValue: 67.5,
-        topContributors: [
-          { feature: "avg_impact_score_rolling_24", shapValue: 11.4 },
-          { feature: "hour_sin",                    shapValue:  6.2 },
-          { feature: "repeat_offender_ratio",       shapValue: -2.1 },
-        ],
-      },
-    ],
-  };
-}
-
-async function fetchShap(gridCellId: string): Promise<FetchState> {
-  // No API base configured — show mock with a badge
-  if (!BASE) {
-    return { status: "mock", data: mockShapExplanation(gridCellId) };
-  }
-
-  try {
-    const res = await fetch(`${BASE}/shap/${encodeURIComponent(gridCellId)}`);
-
-    if (res.status === 404) {
-      // Cell exists in hotspot list but not in shap_top_features.parquet
-      return { status: "not_found", gridCellId };
-    }
-
-    if (!res.ok) {
-      const text = await res.text().catch(() => res.statusText);
-      return { status: "error", message: `${res.status} — ${text}` };
-    }
-
-    const data = (await res.json()) as ShapExplanationResponse;
-    return { status: "real", data };
-
-  } catch (err) {
-    return {
-      status: "error",
-      message: err instanceof Error ? err.message : String(err),
-    };
-  }
-}
 
 // ---------------------------------------------------------------------------
 // Display helpers
@@ -150,7 +62,7 @@ export function ShapExplanationPanel({ gridCellId }: { gridCellId: string }) {
   useEffect(() => {
     let cancelled = false;
     setState({ status: "loading" });
-    fetchShap(gridCellId).then(s => { if (!cancelled) setState(s); });
+    fetchShapExplanation(gridCellId).then(s => { if (!cancelled) setState(s); });
     return () => { cancelled = true; };
   }, [gridCellId]);
 
