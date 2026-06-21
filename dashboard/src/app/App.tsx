@@ -414,7 +414,7 @@ function RadarOverlay({ points }: { points: RadarPoint[] }) {
         }
 
         // Gentle blur for feathered radar look — low enough not to wash out colours.
-        canvas.style.filter = "blur(3px)";
+        canvas.style.filter = "blur(2px)";
       },
     });
 
