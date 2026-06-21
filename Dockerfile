@@ -23,6 +23,7 @@ COPY module1_pipeline/output/deploy_lookups.json /data/module1_pipeline/output/d
 COPY module2_impact_score/output/breakdown_shapes.json /data/module2_impact_score/output/breakdown_shapes.json
 COPY module3_repeat_offender/output/vehicle_risk.parquet /data/module3_repeat_offender/output/vehicle_risk.parquet
 COPY module4_hotspot_forecast/output/feature_importance.csv /data/module4_hotspot_forecast/output/feature_importance.csv
+COPY module4_hotspot_forecast/output/shap_top_features.parquet /data/module4_hotspot_forecast/output/shap_top_features.parquet
 COPY module5_edi/output/edi_scores_with_flow.parquet /data/module5_edi/output/edi_scores_with_flow.parquet
 COPY module5_edi/output/future_priority_with_flow.parquet /data/module5_edi/output/future_priority_with_flow.parquet
 COPY module6_optimizer/config.json /data/module6_optimizer/config.json
@@ -31,9 +32,10 @@ COPY module6_optimizer/output/allocations_future_forecast.json /data/module6_opt
 
 # Set this to your deployed frontend's actual origin (Render/Vercel
 # give you the URL after first deploy; redeploy once you have it).
-ENV INTELLIPARK_CORS_ORIGINS=https://intellipark-beta.vercel.app
+ENV INTELLIPARK_CORS_ORIGINS=http://localhost:5173
 
 ENV PORT=8000
 EXPOSE 8000
 
 CMD ["sh", "-c", "uvicorn app.main:app --host 0.0.0.0 --port ${PORT}"]
+
