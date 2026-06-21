@@ -474,19 +474,19 @@ function FitBounds({ positions }: { positions: [number, number][] }) {
   return null;
 }
 
-interface RangeFilter { min: number; max: number; }
+interface RangeDraft { min: string; max: string; } // raw text as typed; "" = unbounded
 interface HotspotFilters {
-  priorityScore: RangeFilter;
-  predictedViolations: RangeFilter;
-  flowImpact: RangeFilter;
-  recommendedPatrolUnits: RangeFilter;
+  priorityScore: RangeDraft;
+  predictedViolations: RangeDraft;
+  flowImpact: RangeDraft;
+  recommendedPatrolUnits: RangeDraft;
 }
-const FULL_RANGE: RangeFilter = { min: -Infinity, max: Infinity };
+const EMPTY_RANGE_DRAFT: RangeDraft = { min: "", max: "" };
 const EMPTY_HOTSPOT_FILTERS: HotspotFilters = {
-  priorityScore: FULL_RANGE,
-  predictedViolations: FULL_RANGE,
-  flowImpact: FULL_RANGE,
-  recommendedPatrolUnits: FULL_RANGE,
+  priorityScore: { ...EMPTY_RANGE_DRAFT },
+  predictedViolations: { ...EMPTY_RANGE_DRAFT },
+  flowImpact: { ...EMPTY_RANGE_DRAFT },
+  recommendedPatrolUnits: { ...EMPTY_RANGE_DRAFT },
 };
 
 const FILTER_FIELDS: { key: keyof HotspotFilters; label: string }[] = [
@@ -496,7 +496,7 @@ const FILTER_FIELDS: { key: keyof HotspotFilters; label: string }[] = [
   { key: "recommendedPatrolUnits", label: "Recommended patrol units" },
 ];
 
-function dataBounds(locs: HotspotLocation[], key: keyof HotspotFilters): RangeFilter {
+function dataBounds(locs: HotspotLocation[], key: keyof HotspotFilters): { min: number; max: number } {
   if (locs.length === 0) return { min: 0, max: 0 };
   let min = Infinity, max = -Infinity;
   for (const loc of locs) {
@@ -507,18 +507,52 @@ function dataBounds(locs: HotspotLocation[], key: keyof HotspotFilters): RangeFi
   return { min, max };
 }
 
+/** Parses one typed value. "" -> null (unbounded, no error). Anything
+ * non-numeric -> NaN (error, but never crashes filtering). */
+function parseDraftValue(raw: string): number | null {
+  const trimmed = raw.trim();
+  if (trimmed === "") return null;
+  const n = Number(trimmed);
+  return Number.isFinite(n) ? n : NaN;
+}
+
+/** Resolves a draft to safe numeric bounds for filtering. Invalid or
+ * empty values fall back to unbounded rather than excluding everything. */
+function resolveRange(draft: RangeDraft): { min: number; max: number } {
+  const min = parseDraftValue(draft.min);
+  const max = parseDraftValue(draft.max);
+  return {
+    min: min === null || Number.isNaN(min) ? -Infinity : min,
+    max: max === null || Number.isNaN(max) ? Infinity : max,
+  };
+}
+
+/** Per-field error info for showing red borders / messages in the UI. */
+function rangeErrors(draft: RangeDraft): { minInvalid: boolean; maxInvalid: boolean; inverted: boolean } {
+  const min = parseDraftValue(draft.min);
+  const max = parseDraftValue(draft.max);
+  const minInvalid = Number.isNaN(min);
+  const maxInvalid = Number.isNaN(max);
+  const inverted = !minInvalid && !maxInvalid && min !== null && max !== null && min > max;
+  return { minInvalid, maxInvalid, inverted };
+}
+
 function applyHotspotFilters(locs: HotspotLocation[], filters: HotspotFilters): HotspotLocation[] {
   return locs.filter(loc => FILTER_FIELDS.every(({ key }) => {
+    const { min, max } = resolveRange(filters[key]);
     const v = loc[key] as number;
-    return v >= filters[key].min && v <= filters[key].max;
+    return v >= min && v <= max;
   }));
+}
+
+function isFilterActive(draft: RangeDraft): boolean {
+  return draft.min.trim() !== "" || draft.max.trim() !== "";
 }
 
 function HotspotMap({ mode, dark }: { mode: DeployMode; dark: boolean }) {
   const [data, setData] = useState<Awaited<ReturnType<typeof fetchHotspots>> | null>(null);
   const [loading, setLoading] = useState(true);
   const [mapView, setMapView] = useState<"smooth" | "exact">("smooth");
-  const [metric, setMetric] = useState("Priority score");
   const [selectedId, setSelectedId] = useState<string | null>(null);
   const [filtersOpen, setFiltersOpen] = useState(false);
   const [filters, setFilters] = useState<HotspotFilters>(EMPTY_HOTSPOT_FILTERS);
@@ -543,10 +577,7 @@ function HotspotMap({ mode, dark }: { mode: DeployMode; dark: boolean }) {
   const allLocs = data.locations;
   const isPast = mode === "historical_gap";
   const locs = applyHotspotFilters(allLocs, filters);
-  const activeFilterCount = FILTER_FIELDS.filter(({ key }) => {
-    const b = dataBounds(allLocs, key);
-    return filters[key].min > b.min || filters[key].max < b.max;
-  }).length;
+  const activeFilterCount = FILTER_FIELDS.filter(({ key }) => isFilterActive(filters[key])).length;
   const selected = selectedId !== null ? (locs.find(l => l.gridCellId === selectedId) ?? null) : null;
 
   function verdict(loc: HotspotLocation) {
@@ -573,24 +604,6 @@ function HotspotMap({ mode, dark }: { mode: DeployMode; dark: boolean }) {
           value={mapView === "smooth" ? "Smooth view" : "Exact locations"}
           onChange={v => setMapView(v === "Smooth view" ? "smooth" : "exact")}
         />
-        <select
-          value={metric}
-          onChange={e => setMetric(e.target.value)}
-          style={{
-            background: "var(--ip-surface)",
-            border: "1px solid var(--ip-hairline)",
-            color: "var(--ip-text)",
-            fontFamily: "var(--font-mono)",
-            fontSize: "0.76rem",
-            padding: "6px 10px",
-            borderRadius: 6,
-            cursor: "pointer",
-          }}
-        >
-          {["Priority score", "Predicted violations", "Traffic-flow impact", "Recommended patrol units"].map(m => (
-            <option key={m}>{m}</option>
-          ))}
-        </select>
         <button
           onClick={() => setFiltersOpen(o => !o)}
           style={{
@@ -634,9 +647,10 @@ function HotspotMap({ mode, dark }: { mode: DeployMode; dark: boolean }) {
         }}>
           {FILTER_FIELDS.map(({ key, label }) => {
             const bounds = dataBounds(allLocs, key);
-            const current = filters[key];
-            const minVal = current.min === -Infinity ? bounds.min : current.min;
-            const maxVal = current.max === Infinity ? bounds.max : current.max;
+            const draft = filters[key];
+            const errs = rangeErrors(draft);
+            const errorBorder = "1px solid #FF4D2E";
+            const normalBorder = "1px solid var(--ip-hairline)";
             return (
               <div key={key} style={{ display: "flex", flexDirection: "column", gap: 6 }}>
                 <div style={{ fontFamily: "var(--font-mono)", fontSize: "0.68rem", letterSpacing: "0.05em", color: "var(--ip-text-dim)" }}>
@@ -644,42 +658,52 @@ function HotspotMap({ mode, dark }: { mode: DeployMode; dark: boolean }) {
                 </div>
                 <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
                   <input
-                    type="number"
-                    value={Number.isFinite(minVal) ? Math.floor(minVal) : ""}
-                    min={Math.floor(bounds.min)}
-                    max={Math.ceil(bounds.max)}
+                    type="text"
+                    inputMode="numeric"
+                    placeholder={String(Math.floor(bounds.min))}
+                    value={draft.min}
                     onChange={e => {
-                      const v = e.target.value === "" ? -Infinity : Number(e.target.value);
+                      const v = e.target.value;
                       setFilters(f => ({ ...f, [key]: { ...f[key], min: v } }));
                     }}
                     style={{
                       width: "100%", background: "var(--ip-surface-2)",
-                      border: "1px solid var(--ip-hairline)", color: "var(--ip-text)",
+                      border: errs.minInvalid || errs.inverted ? errorBorder : normalBorder,
+                      color: "var(--ip-text)",
                       fontFamily: "var(--font-mono)", fontSize: "0.74rem",
                       padding: "5px 8px", borderRadius: 4,
                     }}
                   />
                   <span style={{ color: "var(--ip-text-dim)", fontSize: "0.7rem" }}>to</span>
                   <input
-                    type="number"
-                    value={Number.isFinite(maxVal) ? Math.ceil(maxVal) : ""}
-                    min={Math.floor(bounds.min)}
-                    max={Math.ceil(bounds.max)}
+                    type="text"
+                    inputMode="numeric"
+                    placeholder={String(Math.ceil(bounds.max))}
+                    value={draft.max}
                     onChange={e => {
-                      const v = e.target.value === "" ? Infinity : Number(e.target.value);
+                      const v = e.target.value;
                       setFilters(f => ({ ...f, [key]: { ...f[key], max: v } }));
                     }}
                     style={{
                       width: "100%", background: "var(--ip-surface-2)",
-                      border: "1px solid var(--ip-hairline)", color: "var(--ip-text)",
+                      border: errs.maxInvalid || errs.inverted ? errorBorder : normalBorder,
+                      color: "var(--ip-text)",
                       fontFamily: "var(--font-mono)", fontSize: "0.74rem",
                       padding: "5px 8px", borderRadius: 4,
                     }}
                   />
                 </div>
-                <div style={{ fontFamily: "var(--font-mono)", fontSize: "0.62rem", color: "var(--ip-text-dim)" }}>
-                  data range: {Math.floor(bounds.min)}–{Math.ceil(bounds.max)}
-                </div>
+                {(errs.minInvalid || errs.maxInvalid || errs.inverted) ? (
+                  <div style={{ fontFamily: "var(--font-mono)", fontSize: "0.62rem", color: "#FF4D2E" }}>
+                    {errs.minInvalid || errs.maxInvalid
+                      ? "Enter a number, or leave blank for no limit."
+                      : "Min is greater than max — this range matches nothing."}
+                  </div>
+                ) : (
+                  <div style={{ fontFamily: "var(--font-mono)", fontSize: "0.62rem", color: "var(--ip-text-dim)" }}>
+                    data range: {Math.floor(bounds.min)}–{Math.ceil(bounds.max)}
+                  </div>
+                )}
               </div>
             );
           })}
@@ -770,7 +794,7 @@ function HotspotMap({ mode, dark }: { mode: DeployMode; dark: boolean }) {
               color: "rgba(255,255,255,0.55)", letterSpacing: "0.03em",
               background: "rgba(10,14,15,0.45)", padding: "2px 6px", borderRadius: 4,
             }}>
-              {metric.toUpperCase()}
+              PRIORITY SCORE
             </div>
           </div>
           <div style={{
