@@ -330,7 +330,7 @@ interface RadarPoint {
 
 // Zone → radar color (RGB, will be used in canvas gradient stops)
 const RADAR_COLOR: Record<ZoneColor, [number, number, number]> = {
-  RED:    [255, 77,  46],
+  RED:    [255, 70,  50], 
   YELLOW: [245, 197, 24],
   GREEN:  [57,  184, 138],
 };
