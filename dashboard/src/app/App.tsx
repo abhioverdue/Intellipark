@@ -385,27 +385,26 @@ function RadarOverlay({ points }: { points: RadarPoint[] }) {
         const ctx = canvas.getContext("2d")!;
         ctx.clearRect(0, 0, canvas.width, canvas.height);
 
-        // Composite mode: "screen" lets blobs merge naturally like a
-        // heat-map rather than stacking opaque on top of each other
-        ctx.globalCompositeOperation = "screen";
+        // source-over: normal alpha compositing. "screen" was causing
+        // overlapping blobs to add RGB channels and blow out to white.
+        ctx.globalCompositeOperation = "source-over";
 
         for (const pt of points) {
           const px = m.latLngToContainerPoint([pt.lat, pt.lng]);
 
-          // Radius grows with zoom: base ~80px at z11, scales with zoom
           const zoom = m.getZoom();
           const baseRadius = 60 * Math.pow(2, zoom - 11);
           const radius = Math.max(40, Math.min(300, baseRadius * (0.6 + (pt.priorityScore / 100) * 0.9)));
 
           const [r, g, b] = RADAR_COLOR[pt.zone];
-          // Peak opacity driven by priority score; RED hottest, GREEN coolest
-          const peakAlpha = 0.18 + (pt.priorityScore / 100) * 0.52;
+          // Low individual alpha so stacked blobs stay coloured, not white.
+          // Even 4 overlapping cells at 0.28 peak only reach ~0.7 combined.
+          const peakAlpha = 0.08 + (pt.priorityScore / 100) * 0.20;
 
-          // Radial gradient: bright center fades to transparent edge
           const grad = ctx.createRadialGradient(px.x, px.y, 0, px.x, px.y, radius);
-          grad.addColorStop(0,    `rgba(${r},${g},${b},${peakAlpha.toFixed(2)})`);
-          grad.addColorStop(0.35, `rgba(${r},${g},${b},${(peakAlpha * 0.6).toFixed(2)})`);
-          grad.addColorStop(0.7,  `rgba(${r},${g},${b},${(peakAlpha * 0.18).toFixed(2)})`);
+          grad.addColorStop(0,    `rgba(${r},${g},${b},${peakAlpha.toFixed(3)})`);
+          grad.addColorStop(0.4,  `rgba(${r},${g},${b},${(peakAlpha * 0.5).toFixed(3)})`);
+          grad.addColorStop(0.75, `rgba(${r},${g},${b},${(peakAlpha * 0.15).toFixed(3)})`);
           grad.addColorStop(1,    `rgba(${r},${g},${b},0)`);
 
           ctx.beginPath();
@@ -414,9 +413,8 @@ function RadarOverlay({ points }: { points: RadarPoint[] }) {
           ctx.fill();
         }
 
-        // Soften with a blur pass by drawing into itself via shadow
-        // (CSS filter on the canvas element is cheaper than per-pixel ops)
-        canvas.style.filter = "blur(8px)";
+        // Gentle blur for feathered radar look — low enough not to wash out colours.
+        canvas.style.filter = "blur(6px)";
       },
     });
 
