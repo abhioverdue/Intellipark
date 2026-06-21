@@ -821,47 +821,52 @@ function HotspotMap({ mode, dark }: { mode: DeployMode; dark: boolean }) {
           background: "var(--ip-surface)",
           border: "1px solid var(--ip-hairline)",
           borderRadius: 10, overflow: "hidden",
+          display: "flex", flexDirection: "column",
+          height: 442,
         }}>
           <div style={{
             padding: "12px 16px",
             borderBottom: "1px solid var(--ip-hairline)",
             fontFamily: "var(--font-mono)", fontSize: "0.72rem",
             letterSpacing: "0.06em", color: "var(--ip-text-dim)",
+            flexShrink: 0,
           }}>
             TOP {locs.length} LOCATIONS
           </div>
-          {locs.length === 0 && (
-            <div style={{ padding: "20px 16px", fontFamily: "var(--font-mono)", fontSize: "0.74rem", color: "var(--ip-text-dim)" }}>
-              No locations match the current filters.
-            </div>
-          )}
-          {locs.map((loc, i) => (
-            <div
-              key={loc.gridCellId + i}
-              onClick={() => setSelectedId(loc.gridCellId === selectedId ? null : loc.gridCellId)}
-              style={{
-                padding: "10px 16px",
-                borderBottom: i < locs.length - 1 ? "1px solid var(--ip-hairline)" : "none",
-                cursor: "pointer",
-                background: selectedId === loc.gridCellId ? "rgba(245,197,24,0.07)" : "transparent",
-                display: "flex", alignItems: "center", gap: 10,
-                transition: "background 0.1s",
-              }}
-            >
-              <span style={{ fontFamily: "var(--font-mono)", fontSize: "0.7rem", color: "var(--ip-text-dim)", width: 16, flexShrink: 0 }}>
-                {i + 1}
-              </span>
-              <div style={{ flex: 1, minWidth: 0 }}>
-                <div style={{ fontSize: "0.82rem", fontWeight: 500, color: "var(--ip-text)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
-                  {loc.junctionName}
-                </div>
-                <div style={{ fontFamily: "var(--font-mono)", fontSize: "0.68rem", color: "var(--ip-text-dim)", marginTop: 2 }}>
-                  {fmtCount(loc.predictedViolations)} pred · {loc.recommendedPatrolUnits} officers
-                </div>
+          <div style={{ flex: 1, overflowY: "auto" }}>
+            {locs.length === 0 && (
+              <div style={{ padding: "20px 16px", fontFamily: "var(--font-mono)", fontSize: "0.74rem", color: "var(--ip-text-dim)" }}>
+                No locations match the current filters.
               </div>
-              <ZoneBadge zone={loc.zone} />
-            </div>
-          ))}
+            )}
+            {locs.map((loc, i) => (
+              <div
+                key={loc.gridCellId + i}
+                onClick={() => setSelectedId(loc.gridCellId === selectedId ? null : loc.gridCellId)}
+                style={{
+                  padding: "10px 16px",
+                  borderBottom: i < locs.length - 1 ? "1px solid var(--ip-hairline)" : "none",
+                  cursor: "pointer",
+                  background: selectedId === loc.gridCellId ? "rgba(245,197,24,0.07)" : "transparent",
+                  display: "flex", alignItems: "center", gap: 10,
+                  transition: "background 0.1s",
+                }}
+              >
+                <span style={{ fontFamily: "var(--font-mono)", fontSize: "0.7rem", color: "var(--ip-text-dim)", width: 16, flexShrink: 0 }}>
+                  {i + 1}
+                </span>
+                <div style={{ flex: 1, minWidth: 0 }}>
+                  <div style={{ fontSize: "0.82rem", fontWeight: 500, color: "var(--ip-text)", whiteSpace: "nowrap", overflow: "hidden", textOverflow: "ellipsis" }}>
+                    {loc.junctionName}
+                  </div>
+                  <div style={{ fontFamily: "var(--font-mono)", fontSize: "0.68rem", color: "var(--ip-text-dim)", marginTop: 2 }}>
+                    {fmtCount(loc.predictedViolations)} pred · {loc.recommendedPatrolUnits} officers
+                  </div>
+                </div>
+                <ZoneBadge zone={loc.zone} />
+              </div>
+            ))}
+          </div>
         </div>
       </div>
 
