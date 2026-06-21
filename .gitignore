@@ -24,7 +24,7 @@ module3_repeat_offender/output/*
 module4_hotspot_forecast/output/*
 !module4_hotspot_forecast/output/feature_importance.csv
 !module4_hotspot_forecast/output/.gitkeep
-
+!module4_hotspot_forecast/output/shap_top_features.parquet
 module5_edi/output/*
 !module5_edi/output/edi_scores_with_flow.parquet
 !module5_edi/output/future_priority_with_flow.parquet
