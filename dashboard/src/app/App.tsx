@@ -510,13 +510,10 @@ function HotspotMap({ mode, dark }: { mode: DeployMode; dark: boolean }) {
   }
 
   const positions: [number, number][] = locs.map(loc => [loc.lat, loc.lng]);
-  const smoothPositions: [number, number][] = useMemo(
-    () => [...locs]
-      .sort((a, b) => b.priorityScore - a.priorityScore)
-      .slice(0, Math.min(160, locs.length))
-      .map(loc => [loc.lat, loc.lng]),
-    [locs],
-  );
+  const smoothPositions: [number, number][] = [...locs]
+    .sort((a, b) => b.priorityScore - a.priorityScore)
+    .slice(0, Math.min(160, locs.length))
+    .map(loc => [loc.lat, loc.lng]);
   const tileClass = `ip-leaflet-tiles${dark ? " ip-leaflet-tiles-dark" : ""}`;
 
   return (
@@ -1328,4 +1325,3 @@ export default function App() {
     </div>
   );
 }
-
