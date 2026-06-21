@@ -12,7 +12,7 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 from . import config
-from .routers import hotspots, allocations, repeat_offenders, simulator, limitations
+from .routers import hotspots, allocations, repeat_offenders, simulator, limitations, shap
 
 app = FastAPI(
     title="IntelliPark API",
@@ -32,6 +32,7 @@ app.include_router(allocations.router, prefix="/api")
 app.include_router(repeat_offenders.router, prefix="/api")
 app.include_router(simulator.router, prefix="/api")
 app.include_router(limitations.router, prefix="/api")
+app.include_router(shap.router, prefix="/api")
 
 
 @app.get("/health")
@@ -63,3 +64,4 @@ def health():
         "project_root": str(config.PROJECT_ROOT),
         "outputs": checks,
     }
+
