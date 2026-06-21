@@ -6,7 +6,7 @@
  * this UI to real pipeline outputs without changing this component.
  */
 
-import { useState, useMemo, useCallback, useEffect } from "react";
+import { useState, useMemo, useCallback, useEffect, useRef } from "react";
 import {
   MapPin, Users, Car, Sliders, Info,
   Sun, Moon, ChevronUp, ChevronDown,
@@ -17,8 +17,9 @@ import {
   BarChart, Bar, XAxis, YAxis, Tooltip, Cell, ResponsiveContainer,
 } from "recharts";
 import {
-  MapContainer, TileLayer, CircleMarker, Circle, Popup, useMap,
+  MapContainer, TileLayer, CircleMarker, Popup, useMap,
 } from "react-leaflet";
+import L from "leaflet";
 
 import {
   fetchHotspots,
@@ -313,6 +314,135 @@ function EmptyState({ title, detail }: { title: string; detail: string }) {
    SECTION 1 — HOTSPOT MAP
    ========================================================================= */
 
+/* =========================================================================
+   RADAR OVERLAY — canvas-based gaussian intensity field (smooth view)
+   Mirrors the landing page's radial-gradient weather-radar aesthetic but
+   driven by real lat/lon data. Renders on a Leaflet canvas overlay so it
+   moves and zooms with the map tiles.
+   ========================================================================= */
+
+interface RadarPoint {
+  lat: number;
+  lng: number;
+  priorityScore: number;  // 0-100
+  zone: ZoneColor;
+}
+
+// Zone → radar color (RGB, will be used in canvas gradient stops)
+const RADAR_COLOR: Record<ZoneColor, [number, number, number]> = {
+  RED:    [255, 77,  46],
+  YELLOW: [245, 197, 24],
+  GREEN:  [57,  184, 138],
+};
+
+function RadarOverlay({ points }: { points: RadarPoint[] }) {
+  const map = useMap();
+  const canvasRef = useRef<HTMLCanvasElement | null>(null);
+  const layerRef = useRef<L.Layer | null>(null);
+
+  useEffect(() => {
+    if (!map) return;
+
+    // Create a custom Leaflet layer that owns a canvas element
+    const RadarLayer = L.Layer.extend({
+      onAdd(m: L.Map) {
+        const canvas = document.createElement("canvas");
+        canvas.style.position = "absolute";
+        canvas.style.top = "0";
+        canvas.style.left = "0";
+        canvas.style.pointerEvents = "none";
+        canvas.style.zIndex = "400";
+        // Attach above tile pane, below marker pane
+        m.getPanes().overlayPane.appendChild(canvas);
+        canvasRef.current = canvas;
+        this._canvas = canvas;
+        this._map = m;
+        this._draw();
+        m.on("moveend zoomend resize", this._draw, this);
+      },
+      onRemove(m: L.Map) {
+        m.off("moveend zoomend resize", this._draw, this);
+        if (this._canvas && this._canvas.parentNode) {
+          this._canvas.parentNode.removeChild(this._canvas);
+        }
+        canvasRef.current = null;
+      },
+      _draw() {
+        const canvas = this._canvas as HTMLCanvasElement;
+        const m = this._map as L.Map;
+        if (!canvas || !m) return;
+
+        const size = m.getSize();
+        canvas.width  = size.x;
+        canvas.height = size.y;
+        canvas.style.width  = size.x + "px";
+        canvas.style.height = size.y + "px";
+
+        // Align canvas with the map's top-left corner
+        const topLeft = m.containerPointToLayerPoint([0, 0]);
+        L.DomUtil.setPosition(canvas, topLeft);
+
+        const ctx = canvas.getContext("2d")!;
+        ctx.clearRect(0, 0, canvas.width, canvas.height);
+
+        // Composite mode: "screen" lets blobs merge naturally like a
+        // heat-map rather than stacking opaque on top of each other
+        ctx.globalCompositeOperation = "screen";
+
+        for (const pt of points) {
+          const px = m.latLngToContainerPoint([pt.lat, pt.lng]);
+
+          // Radius grows with zoom: base ~80px at z11, scales with zoom
+          const zoom = m.getZoom();
+          const baseRadius = 60 * Math.pow(2, zoom - 11);
+          const radius = Math.max(40, Math.min(300, baseRadius * (0.6 + (pt.priorityScore / 100) * 0.9)));
+
+          const [r, g, b] = RADAR_COLOR[pt.zone];
+          // Peak opacity driven by priority score; RED hottest, GREEN coolest
+          const peakAlpha = 0.18 + (pt.priorityScore / 100) * 0.52;
+
+          // Radial gradient: bright center fades to transparent edge
+          const grad = ctx.createRadialGradient(px.x, px.y, 0, px.x, px.y, radius);
+          grad.addColorStop(0,    `rgba(${r},${g},${b},${peakAlpha.toFixed(2)})`);
+          grad.addColorStop(0.35, `rgba(${r},${g},${b},${(peakAlpha * 0.6).toFixed(2)})`);
+          grad.addColorStop(0.7,  `rgba(${r},${g},${b},${(peakAlpha * 0.18).toFixed(2)})`);
+          grad.addColorStop(1,    `rgba(${r},${g},${b},0)`);
+
+          ctx.beginPath();
+          ctx.arc(px.x, px.y, radius, 0, Math.PI * 2);
+          ctx.fillStyle = grad;
+          ctx.fill();
+        }
+
+        // Soften with a blur pass by drawing into itself via shadow
+        // (CSS filter on the canvas element is cheaper than per-pixel ops)
+        canvas.style.filter = "blur(8px)";
+      },
+    });
+
+    const layer = new (RadarLayer as unknown as new () => L.Layer)();
+    // Attach points so _draw can see them via closure
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    (layer as any)._points = points;
+    // Patch _draw to use current points from closure
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    const proto = layer as any;
+    const originalDraw = proto._draw.bind(proto);
+    proto._draw = originalDraw;
+
+    layer.addTo(map);
+    layerRef.current = layer;
+
+    return () => {
+      layer.remove();
+      layerRef.current = null;
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [map, JSON.stringify(points.map(p => [p.lat, p.lng, p.priorityScore, p.zone]))]);
+
+  return null;
+}
+
 /**
  * Re-centers/zooms the Leaflet map whenever the underlying data
  * changes (e.g. switching historical_gap <-> future_forecast can
@@ -441,23 +571,16 @@ function HotspotMap({ mode, dark }: { mode: DeployMode; dark: boolean }) {
               />
               <FitBounds positions={positions} />
 
-              {mapView === "smooth" && locs.map((loc, i) => {
-                const col = zoneColor(loc.zone).solid;
-                const radiusMeters = 220 + (loc.priorityScore / 100) * 380;
-                return (
-                  <Circle
-                    key={loc.gridCellId + i}
-                    center={[loc.lat, loc.lng]}
-                    radius={radiusMeters}
-                    pathOptions={{
-                      color: col,
-                      weight: 0,
-                      fillColor: col,
-                      fillOpacity: 0.12 + (loc.priorityScore / 100) * 0.28,
-                    }}
-                  />
-                );
-              })}
+              {mapView === "smooth" && (
+                <RadarOverlay
+                  points={locs.map(loc => ({
+                    lat: loc.lat,
+                    lng: loc.lng,
+                    priorityScore: loc.priorityScore,
+                    zone: loc.zone,
+                  }))}
+                />
+              )}
 
               {mapView === "exact" && locs.map((loc, i) => {
                 const c = zoneColor(loc.zone);
@@ -1192,3 +1315,4 @@ export default function App() {
     </div>
   );
 }
+
