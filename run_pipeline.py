@@ -45,6 +45,7 @@ STEPS = [
     ("vehicle_risk", "module3_repeat_offender/vehicle_risk.py"),
     ("grid_features", "module4_hotspot_forecast/grid_features.py"),
     ("train", "module4_hotspot_forecast/train_model.py"),
+    ("shap_explain", "module4_hotspot_forecast/shap_explain.py"),
     ("forecast_future", "module4_hotspot_forecast/forecast_future.py"),
     ("edi", "module5_edi/edi.py"),
     ("future_priority", "module5_edi/future_priority.py"),
