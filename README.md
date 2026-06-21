@@ -2,11 +2,6 @@
 
 Enforcement-intelligence dashboard: hotspot forecasts, officer allocation, repeat-offender risk, and a policy simulator, backed by a FastAPI API serving precomputed pipeline outputs.
 
-## Requirements
-
-- Node 18+
-- Python 3.10+
-
 ## 1. Run the dashboard (quickest way to look at it)
 
 ```bash
@@ -15,7 +10,7 @@ npm install
 npm run dev
 ```
 
-Opens at `http://localhost:5173`. With no backend running, it automatically uses built-in mock data — nothing else to configure.
+Opens at `http://localhost:5173`.
 
 ## 2. Run the backend (to see real data instead of mocks)
 
@@ -26,7 +21,7 @@ pip install -r requirements.txt
 INTELLIPARK_CORS_ORIGINS=http://localhost:5173 uvicorn app.main:app --reload --port 8000
 ```
 
-The `INTELLIPARK_CORS_ORIGINS` override is required — without it the API only allows the deployed frontend's origin, not your local dev server.
+The `INTELLIPARK_CORS_ORIGINS` override is required, without it the API only allows the deployed frontend's origin, not your local dev server.
 
 Check `http://localhost:8000/health` — it lists which pipeline output files are present.
 
@@ -59,16 +54,10 @@ python module5_edi/flow_proxy.py
 python module6_optimizer/optimizer.py
 ```
 
-## 4. (Optional) Production build
+## 4. Production view
 
 ```bash
 cd dashboard
-npm run build      # outputs to dashboard/dist
+npm run dev   
 ```
 
-## 5. (Optional) Docker (backend only)
-
-```bash
-docker build -t intellipark-backend .
-docker run -p 8000:8000 -e INTELLIPARK_CORS_ORIGINS=http://localhost:5173 intellipark-backend
-```
