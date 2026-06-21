@@ -474,16 +474,59 @@ function FitBounds({ positions }: { positions: [number, number][] }) {
   return null;
 }
 
+interface RangeFilter { min: number; max: number; }
+interface HotspotFilters {
+  priorityScore: RangeFilter;
+  predictedViolations: RangeFilter;
+  flowImpact: RangeFilter;
+  recommendedPatrolUnits: RangeFilter;
+}
+const FULL_RANGE: RangeFilter = { min: -Infinity, max: Infinity };
+const EMPTY_HOTSPOT_FILTERS: HotspotFilters = {
+  priorityScore: FULL_RANGE,
+  predictedViolations: FULL_RANGE,
+  flowImpact: FULL_RANGE,
+  recommendedPatrolUnits: FULL_RANGE,
+};
+
+const FILTER_FIELDS: { key: keyof HotspotFilters; label: string }[] = [
+  { key: "priorityScore",          label: "Priority score" },
+  { key: "predictedViolations",    label: "Predicted violations" },
+  { key: "flowImpact",             label: "Traffic-flow impact" },
+  { key: "recommendedPatrolUnits", label: "Recommended patrol units" },
+];
+
+function dataBounds(locs: HotspotLocation[], key: keyof HotspotFilters): RangeFilter {
+  if (locs.length === 0) return { min: 0, max: 0 };
+  let min = Infinity, max = -Infinity;
+  for (const loc of locs) {
+    const v = loc[key] as number;
+    if (v < min) min = v;
+    if (v > max) max = v;
+  }
+  return { min, max };
+}
+
+function applyHotspotFilters(locs: HotspotLocation[], filters: HotspotFilters): HotspotLocation[] {
+  return locs.filter(loc => FILTER_FIELDS.every(({ key }) => {
+    const v = loc[key] as number;
+    return v >= filters[key].min && v <= filters[key].max;
+  }));
+}
+
 function HotspotMap({ mode, dark }: { mode: DeployMode; dark: boolean }) {
   const [data, setData] = useState<Awaited<ReturnType<typeof fetchHotspots>> | null>(null);
   const [loading, setLoading] = useState(true);
   const [mapView, setMapView] = useState<"smooth" | "exact">("smooth");
   const [metric, setMetric] = useState("Priority score");
   const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [filtersOpen, setFiltersOpen] = useState(false);
+  const [filters, setFilters] = useState<HotspotFilters>(EMPTY_HOTSPOT_FILTERS);
 
   useEffect(() => {
     setLoading(true);
     setSelectedId(null);
+    setFilters(EMPTY_HOTSPOT_FILTERS);
     fetchHotspots(mode).then(setData).finally(() => setLoading(false));
   }, [mode]);
 
@@ -497,8 +540,13 @@ function HotspotMap({ mode, dark }: { mode: DeployMode; dark: boolean }) {
     );
   }
 
-  const locs = data.locations;
+  const allLocs = data.locations;
   const isPast = mode === "historical_gap";
+  const locs = applyHotspotFilters(allLocs, filters);
+  const activeFilterCount = FILTER_FIELDS.filter(({ key }) => {
+    const b = dataBounds(allLocs, key);
+    return filters[key].min > b.min || filters[key].max < b.max;
+  }).length;
   const selected = selectedId !== null ? (locs.find(l => l.gridCellId === selectedId) ?? null) : null;
 
   function verdict(loc: HotspotLocation) {
@@ -543,7 +591,100 @@ function HotspotMap({ mode, dark }: { mode: DeployMode; dark: boolean }) {
             <option key={m}>{m}</option>
           ))}
         </select>
+        <button
+          onClick={() => setFiltersOpen(o => !o)}
+          style={{
+            display: "flex", alignItems: "center", gap: 6,
+            background: filtersOpen || activeFilterCount > 0 ? "rgba(245,197,24,0.12)" : "var(--ip-surface)",
+            border: `1px solid ${activeFilterCount > 0 ? "var(--ip-yellow)" : "var(--ip-hairline)"}`,
+            color: "var(--ip-text)",
+            fontFamily: "var(--font-mono)",
+            fontSize: "0.76rem",
+            padding: "6px 12px",
+            borderRadius: 6,
+            cursor: "pointer",
+          }}
+        >
+          <Sliders size={13} />
+          Filters{activeFilterCount > 0 ? ` (${activeFilterCount})` : ""}
+        </button>
+        {activeFilterCount > 0 && (
+          <button
+            onClick={() => setFilters(EMPTY_HOTSPOT_FILTERS)}
+            style={{
+              background: "transparent", border: "none",
+              color: "var(--ip-text-dim)", fontFamily: "var(--font-mono)",
+              fontSize: "0.72rem", cursor: "pointer", textDecoration: "underline",
+              padding: "6px 4px",
+            }}
+          >
+            Reset filters
+          </button>
+        )}
+        <div style={{ fontFamily: "var(--font-mono)", fontSize: "0.72rem", color: "var(--ip-text-dim)" }}>
+          {locs.length} / {allLocs.length} locations
+        </div>
       </div>
+
+      {filtersOpen && (
+        <div style={{
+          display: "grid", gridTemplateColumns: "repeat(auto-fit, minmax(220px, 1fr))",
+          gap: 14, background: "var(--ip-surface)", border: "1px solid var(--ip-hairline)",
+          borderRadius: 8, padding: "14px 16px",
+        }}>
+          {FILTER_FIELDS.map(({ key, label }) => {
+            const bounds = dataBounds(allLocs, key);
+            const current = filters[key];
+            const minVal = current.min === -Infinity ? bounds.min : current.min;
+            const maxVal = current.max === Infinity ? bounds.max : current.max;
+            return (
+              <div key={key} style={{ display: "flex", flexDirection: "column", gap: 6 }}>
+                <div style={{ fontFamily: "var(--font-mono)", fontSize: "0.68rem", letterSpacing: "0.05em", color: "var(--ip-text-dim)" }}>
+                  {label.toUpperCase()}
+                </div>
+                <div style={{ display: "flex", alignItems: "center", gap: 8 }}>
+                  <input
+                    type="number"
+                    value={Number.isFinite(minVal) ? Math.floor(minVal) : ""}
+                    min={Math.floor(bounds.min)}
+                    max={Math.ceil(bounds.max)}
+                    onChange={e => {
+                      const v = e.target.value === "" ? -Infinity : Number(e.target.value);
+                      setFilters(f => ({ ...f, [key]: { ...f[key], min: v } }));
+                    }}
+                    style={{
+                      width: "100%", background: "var(--ip-surface-2)",
+                      border: "1px solid var(--ip-hairline)", color: "var(--ip-text)",
+                      fontFamily: "var(--font-mono)", fontSize: "0.74rem",
+                      padding: "5px 8px", borderRadius: 4,
+                    }}
+                  />
+                  <span style={{ color: "var(--ip-text-dim)", fontSize: "0.7rem" }}>to</span>
+                  <input
+                    type="number"
+                    value={Number.isFinite(maxVal) ? Math.ceil(maxVal) : ""}
+                    min={Math.floor(bounds.min)}
+                    max={Math.ceil(bounds.max)}
+                    onChange={e => {
+                      const v = e.target.value === "" ? Infinity : Number(e.target.value);
+                      setFilters(f => ({ ...f, [key]: { ...f[key], max: v } }));
+                    }}
+                    style={{
+                      width: "100%", background: "var(--ip-surface-2)",
+                      border: "1px solid var(--ip-hairline)", color: "var(--ip-text)",
+                      fontFamily: "var(--font-mono)", fontSize: "0.74rem",
+                      padding: "5px 8px", borderRadius: 4,
+                    }}
+                  />
+                </div>
+                <div style={{ fontFamily: "var(--font-mono)", fontSize: "0.62rem", color: "var(--ip-text-dim)" }}>
+                  data range: {Math.floor(bounds.min)}–{Math.ceil(bounds.max)}
+                </div>
+              </div>
+            );
+          })}
+        </div>
+      )}
 
       {/* Map + ranked list */}
       <div style={{ display: "grid", gridTemplateColumns: "1fr 320px", gap: 16, alignItems: "start" }}>
@@ -661,6 +802,11 @@ function HotspotMap({ mode, dark }: { mode: DeployMode; dark: boolean }) {
           }}>
             TOP {locs.length} LOCATIONS
           </div>
+          {locs.length === 0 && (
+            <div style={{ padding: "20px 16px", fontFamily: "var(--font-mono)", fontSize: "0.74rem", color: "var(--ip-text-dim)" }}>
+              No locations match the current filters.
+            </div>
+          )}
           {locs.map((loc, i) => (
             <div
               key={loc.gridCellId + i}
@@ -1325,3 +1471,4 @@ export default function App() {
     </div>
   );
 }
+
