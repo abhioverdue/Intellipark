@@ -399,7 +399,7 @@ function RadarOverlay({ points }: { points: RadarPoint[] }) {
           const [r, g, b] = RADAR_COLOR[pt.zone];
           // Low individual alpha so stacked blobs stay coloured, not white.
           // Even 4 overlapping cells at 0.28 peak only reach ~0.7 combined.
-          const peakAlpha = 0.08 + (pt.priorityScore / 100) * 0.20;
+          const peakAlpha = (0.05 + (pt.priorityScore / 100) * 0.12);
 
           const grad = ctx.createRadialGradient(px.x, px.y, 0, px.x, px.y, radius);
           grad.addColorStop(0,    `rgba(${r},${g},${b},${peakAlpha.toFixed(3)})`);
