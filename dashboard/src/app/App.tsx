@@ -493,7 +493,7 @@ function HotspotMap({ mode, dark }: { mode: DeployMode; dark: boolean }) {
 
   const locs = data.locations;
   const isPast = mode === "historical_gap";
-  const selected = locs.find(l => l.gridCellId === selectedId && l.junctionName === locs.find(x => x.gridCellId === selectedId)?.junctionName) ?? locs.find(l => l.gridCellId === selectedId) ?? null;
+  const selected = selectedId !== null ? (locs.find(l => l.gridCellId === selectedId) ?? null) : null;
 
   function verdict(loc: HotspotLocation) {
     if (loc.observedViolations === null) return null;
